@@ -12,7 +12,7 @@ import java.util.concurrent.Executors;
 
 public class Main
 {
-    static volatile String msg = "Hello";
+    static volatile String msg = "register Gosho myFile1";
 
     public static void main(String[] args) throws IOException
     {

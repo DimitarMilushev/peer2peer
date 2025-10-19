@@ -5,9 +5,11 @@ import main.java.d.milushev.ActiveConnections;
 import main.java.d.milushev.BufferUtils;
 import main.java.d.milushev.exceptions.InvalidConnectionHandling;
 import main.java.d.milushev.exceptions.ServerException;
+import main.java.d.milushev.models.commands.RegisterClientCommand;
 import main.java.d.milushev.models.commands.SlowHelloCommand;
 import main.java.d.milushev.models.protocol.Request;
 import main.java.d.milushev.models.protocol.ResponseFuture;
+import main.java.d.milushev.repository.InMemoryClientsRepository;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -49,6 +51,7 @@ public class Listener implements Runnable, AutoCloseable
     private final Queue<Request> requests = new LinkedList<>();
     private final Queue<ResponseFuture> responses = new LinkedList<>();
     private final Executor executor = Executors.newVirtualThreadPerTaskExecutor();
+    private final InMemoryClientsRepository repository = new InMemoryClientsRepository();
 
 
     public Listener(int port) throws IOException
@@ -89,6 +92,7 @@ public class Listener implements Runnable, AutoCloseable
 
             System.out.println("Started..");
             Instant timeLastAccepted = Instant.now();
+            boolean printTime = true;
 
             while (isActive)
             {
@@ -101,11 +105,6 @@ public class Listener implements Runnable, AutoCloseable
 
                 for (var key : selector.selectedKeys())
                 {
-                    if (key.channel() instanceof SocketChannel channel)
-                    {
-                        System.out.println("Iteration: " + channel.socket().toString());
-                    }
-
                     if (!key.isValid())
                     {
                         continue;
@@ -115,6 +114,7 @@ public class Listener implements Runnable, AutoCloseable
                     {
                         handleAccept(key);
                         timeLastAccepted = Instant.now();
+                        printTime = true;
                     }
                     else if (key.isReadable())
                     {
@@ -126,9 +126,10 @@ public class Listener implements Runnable, AutoCloseable
                     }
                 }
 
-                if (responses.isEmpty())
+                if (printTime & responses.isEmpty())
                 {
                     System.out.println("It took " + Duration.between(timeLastAccepted, Instant.now()).toSeconds() + " seconds.");
+                    printTime = false;
                 }
 
                 selector.selectedKeys().clear();
@@ -230,7 +231,14 @@ public class Listener implements Runnable, AutoCloseable
 
                 lastMessageMap.put(clientChannel, sb.toString());
 
-                executor.execute(new SlowHelloCommand(responses, new Request(sb.toString(), null, clientChannel)));
+                if (sb.toString().startsWith("register"))
+                {
+                    executor.execute(new RegisterClientCommand(sb.toString(), clientChannel, repository, errors, responses));
+                }
+                else
+                {
+                    executor.execute(new SlowHelloCommand(responses, new Request(sb.toString(), null, clientChannel)));
+                }
 
                 buffer.clear();
                 if (bytesRead == -1)

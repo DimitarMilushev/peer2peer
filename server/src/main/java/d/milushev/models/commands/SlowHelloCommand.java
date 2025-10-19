@@ -10,7 +10,7 @@ import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 
 
-public class SlowHelloCommand implements Runnable
+public class SlowHelloCommand implements Command
 {
     private final Queue<ResponseFuture> queue;
     private final Request request;
