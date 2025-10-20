@@ -5,8 +5,10 @@ import main.java.d.milushev.ActiveConnections;
 import main.java.d.milushev.BufferUtils;
 import main.java.d.milushev.exceptions.InvalidConnectionHandling;
 import main.java.d.milushev.exceptions.ServerException;
-import main.java.d.milushev.models.commands.RegisterClientCommand;
+import main.java.d.milushev.models.commands.ListFilesCommand;
+import main.java.d.milushev.models.commands.RegisterCommand;
 import main.java.d.milushev.models.commands.SlowHelloCommand;
+import main.java.d.milushev.models.commands.UnregisterCommand;
 import main.java.d.milushev.models.protocol.Request;
 import main.java.d.milushev.models.protocol.ResponseFuture;
 import main.java.d.milushev.repository.InMemoryClientsRepository;
@@ -233,7 +235,15 @@ public class Listener implements Runnable, AutoCloseable
 
                 if (sb.toString().startsWith("register"))
                 {
-                    executor.execute(new RegisterClientCommand(sb.toString(), clientChannel, repository, errors, responses));
+                    executor.execute(new RegisterCommand(sb.toString(), clientChannel.socket(), repository, errors, responses));
+                }
+                else if (sb.toString().startsWith("unregister"))
+                {
+                    executor.execute(new UnregisterCommand(sb.toString(), clientChannel.socket(), repository, errors, responses));
+                }
+                else if (sb.toString().startsWith("list-files"))
+                {
+                    executor.execute(new ListFilesCommand(clientChannel.socket(), repository, errors, responses));
                 }
                 else
                 {
