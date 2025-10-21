@@ -9,6 +9,7 @@ import java.util.Queue;
 
 public class CloseUserCommand implements Command
 {
+    public static final String NAME = "close-user";
     private final Socket socket;
     private final InMemoryClientsRepository repository;
     private final Queue<Exception> errors;

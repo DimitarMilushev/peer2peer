@@ -15,6 +15,7 @@ import java.util.stream.Collectors;
 
 public class ListFilesCommand implements Command
 {
+    public static final String NAME = "list-files";
     private final Socket socket;
     private final InMemoryClientsRepository repository;
     private final Queue<Exception> errors;

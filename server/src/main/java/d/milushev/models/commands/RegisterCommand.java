@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
  */
 public class RegisterCommand implements Command
 {
+    public static final String NAME = "register";
     private static final int MIN_COMMAND_ARGUMENTS = 2;
 
     private final String input;

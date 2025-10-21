@@ -30,7 +30,11 @@ public class Main
 
         try (final var executor = Executors.newVirtualThreadPerTaskExecutor())
         {
-            final var server = new Listener(8000);
+            final var processor = new Processor(stopSignal);
+            executor.submit(processor);
+
+            final var server = new Listener(8000, processor);
+
             executor.submit(server);
             executor.submit(new ConsoleInputListener(stopSignal));
 

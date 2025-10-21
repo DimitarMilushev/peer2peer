@@ -15,6 +15,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class UnregisterCommand implements Command
 {
+    public static final String NAME = "unregister";
     private static final int MIN_COMMAND_ARGUMENTS = 2;
 
     private final String input;
