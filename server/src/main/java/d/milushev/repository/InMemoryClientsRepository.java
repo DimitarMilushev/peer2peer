@@ -3,6 +3,7 @@ package main.java.d.milushev.repository;
 
 import main.java.d.milushev.repository.models.User;
 
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -64,7 +65,7 @@ public class InMemoryClientsRepository
     }
 
 
-    public User registerFilesByUsername(String username, Set<String> files) throws Exception
+    public User addFilesByUsername(String username, Set<String> files) throws Exception
     {
         System.out.println("Registering files [" + files + "] for user [" + username + "]");
         final User user = usersByName.get(username);
@@ -85,6 +86,25 @@ public class InMemoryClientsRepository
         System.out.println("Successfully registered files [" + files + "] for user [" + username + "]");
 
         return usersByName.get(username);
+    }
+
+
+    public List<User> removeByAddress(String address) throws Exception
+    {
+        System.out.println("Removing usernames with address [" + address + "]");
+        List<User> users = usersByName.values().stream().filter(user -> user.address().equals(address)).toList();
+        if (users.isEmpty())
+        {
+            throw new Exception("No such address [" + address + "]");
+        }
+
+        for (var user : users)
+        {
+            usersByName.remove(user.name());
+        }
+
+        System.out.println("Successfully removed users [" + users + "]");
+        return users;
     }
 
 

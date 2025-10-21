@@ -46,9 +46,10 @@ public class RegisterCommand implements Command
     @Override
     public void run()
     {
+        final ResponseFuture future = new ResponseFuture(socket.getChannel(), new CompletableFuture<>());
+
         try
         {
-            final ResponseFuture future = new ResponseFuture(socket.getChannel(), new CompletableFuture<>());
             responses.add(future);
 
             final User result = registerFiles(parseUser(input, socket.getRemoteSocketAddress().toString()));
@@ -59,6 +60,8 @@ public class RegisterCommand implements Command
             System.out.println("Error during RegisterClient command [" + e.getMessage() + "]");
             e.printStackTrace();
             this.errors.add(e);
+
+            future.response().complete(new Response(e, 500, socket.getChannel()));
         }
     }
 
@@ -67,7 +70,7 @@ public class RegisterCommand implements Command
     {
         if (repository.exists(user.name()))
         {
-            return repository.registerFilesByUsername(user.name(), user.filePaths());
+            return repository.addFilesByUsername(user.name(), user.filePaths());
         }
 
         return repository.addUser(user);

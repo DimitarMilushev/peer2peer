@@ -41,9 +41,9 @@ public class UnregisterCommand implements Command
     @Override
     public void run()
     {
+        final ResponseFuture future = new ResponseFuture(socket.getChannel(), new CompletableFuture<>());
         try
         {
-            final ResponseFuture future = new ResponseFuture(socket.getChannel(), new CompletableFuture<>());
             responses.add(future);
 
             final User user = parseUser(input);
@@ -56,6 +56,8 @@ public class UnregisterCommand implements Command
             System.out.println("Error during UnregisterClient command [" + e.getMessage() + "]");
             e.printStackTrace();
             this.errors.add(e);
+
+            future.response().complete(new Response(e, 500, socket.getChannel()));
         }
     }
 

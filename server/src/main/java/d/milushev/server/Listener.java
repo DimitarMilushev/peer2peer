@@ -9,6 +9,7 @@ import main.java.d.milushev.models.commands.ListFilesCommand;
 import main.java.d.milushev.models.commands.RegisterCommand;
 import main.java.d.milushev.models.commands.SlowHelloCommand;
 import main.java.d.milushev.models.commands.UnregisterCommand;
+import main.java.d.milushev.models.commands.CloseUserCommand;
 import main.java.d.milushev.models.protocol.Request;
 import main.java.d.milushev.models.protocol.ResponseFuture;
 import main.java.d.milushev.repository.InMemoryClientsRepository;
@@ -277,9 +278,11 @@ public class Listener implements Runnable, AutoCloseable
     {
         try
         {
+
             System.out.println("Closing client channel " + channel.getRemoteAddress().toString());
             //            LOGGER.info("Closing client channel " + channel.getRemoteAddress().toString());
 
+            new CloseUserCommand(channel.socket(), repository, errors).run();
             connections.remove(channel);
             channel.close();
         }
