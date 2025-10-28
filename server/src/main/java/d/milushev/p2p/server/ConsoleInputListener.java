@@ -5,7 +5,7 @@ import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
-public class ConsoleInputListener implements Runnable
+public class ConsoleInputListener implements Runnable, AutoCloseable
 {
     private final AtomicBoolean isStopped;
 
@@ -27,6 +27,15 @@ public class ConsoleInputListener implements Runnable
                 inputString = scn.nextLine();
             }
         }
+
+        this.isStopped.set(true);
+    }
+
+
+    @Override
+    public void close()
+    {
+        System.out.println("Closing Console...");
 
         this.isStopped.set(true);
     }

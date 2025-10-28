@@ -38,7 +38,7 @@ public class Listener implements Runnable, AutoCloseable
 
     private final int port;
 
-    private volatile boolean isActive;
+    private volatile boolean isStopped;
 
     private final ServerSocketChannel serverChannel;
     private final Selector selector;
@@ -60,27 +60,25 @@ public class Listener implements Runnable, AutoCloseable
         this.serverChannel = ServerSocketChannel.open();
         this.selector = Selector.open();
         this.connections = new ActiveConnections();
-        isActive = false;
+        isStopped = false;
     }
 
 
     public void stop()
     {
-        this.isActive = false;
+        this.isStopped = false;
     }
 
 
-    public boolean isActive()
+    public boolean isStopped()
     {
-        return this.isActive;
+        return this.isStopped;
     }
 
 
     @Override
     public void run()
     {
-        this.isActive = true;
-
         try
         {
             serverChannel.bind(new InetSocketAddress(port));
@@ -91,11 +89,11 @@ public class Listener implements Runnable, AutoCloseable
             Instant timeLastAccepted = Instant.now();
             boolean printTime = true;
 
-            while (isActive)
+            while (!isStopped)
             {
                 final int readyChannels = selector.select(1000);
 
-                if (!this.isActive || readyChannels == 0)
+                if (this.isStopped || readyChannels == 0)
                 {
                     continue;
                 }
@@ -134,17 +132,17 @@ public class Listener implements Runnable, AutoCloseable
         }
         catch (IOException e)
         {
-            System.out.println("Failed during server startup: " + e.getMessage());
-            LOGGER.log(Level.SEVERE, "Failed during server startup: " + e.getMessage(), e);
+            System.out.println("Failed during listener startup: " + e.getMessage());
+            LOGGER.log(Level.SEVERE, "Failed during listener startup: " + e.getMessage(), e);
         }
         catch (ServerException e)
         {
-            System.out.println("An internal server error has occurred: " + e.getMessage());
+            System.out.println("An internal error has occurred: " + e.getMessage());
             LOGGER.log(Level.SEVERE, "An internal server error has occurred: " + e.getMessage(), e);
         }
         finally
         {
-            System.out.println("Stopping server...");
+            System.out.println("Stopping Listener...");
             stop();
         }
     }
@@ -326,9 +324,9 @@ public class Listener implements Runnable, AutoCloseable
     @Override
     public void close() throws IOException
     {
-        System.out.println("Closing...");
+        System.out.println("Closing Listener...");
 
-        isActive = false;
+        isStopped = true;
         connections.closeAll();
         selector.close();
         serverChannel.close();

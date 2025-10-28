@@ -26,25 +26,26 @@ public class Main
 
         final AtomicBoolean stopSignal = new AtomicBoolean(false);
 
-        try (final var executor = Executors.newVirtualThreadPerTaskExecutor())
+        try (final var executor = Executors.newFixedThreadPool(2);
+                        final var console = new ConsoleInputListener(stopSignal);
+                        final var listener = new Listener(8000))
         {
-            final var server = new Listener(8000);
-            executor.submit(server);
-            executor.submit(new ConsoleInputListener(stopSignal));
+            executor.submit(listener);
+            executor.submit(console);
 
-            while (server.isActive() && !stopSignal.get())
+            while (!listener.isStopped() && !stopSignal.get())
             {
                 Thread.sleep(1000);
             }
 
-            stopSignal.set(true);
-            server.close();
-            executor.shutdown();
+            System.out.println("Closing resources...");
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e);
+            System.out.println("Exception has occurred during server runtime: " + e);
+            e.printStackTrace();
         }
 
+        System.out.println("Server stopped");
     }
 }
