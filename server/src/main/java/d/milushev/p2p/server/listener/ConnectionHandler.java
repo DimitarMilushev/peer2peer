@@ -1,154 +1,48 @@
-package main.java.d.milushev.p2p.server;
+package main.java.d.milushev.p2p.server.listener;
 
 
 import d.milushev.p2p.network_utils.models.Request;
 import d.milushev.p2p.network_utils.models.ResponseFuture;
+import main.java.d.milushev.p2p.server.BufferUtils;
 import main.java.d.milushev.p2p.server.exceptions.InvalidConnectionHandling;
 import main.java.d.milushev.p2p.server.exceptions.ServerException;
+import main.java.d.milushev.p2p.server.models.commands.CloseUserCommand;
 import main.java.d.milushev.p2p.server.models.commands.ListFilesCommand;
 import main.java.d.milushev.p2p.server.models.commands.RegisterCommand;
 import main.java.d.milushev.p2p.server.models.commands.SlowHelloCommand;
 import main.java.d.milushev.p2p.server.models.commands.UnregisterCommand;
-import main.java.d.milushev.p2p.server.models.commands.CloseUserCommand;
 import main.java.d.milushev.p2p.server.repository.InMemoryClientsRepository;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.concurrent.ExecutorService;
 
 
-public class Listener implements Runnable, AutoCloseable
+public class ConnectionHandler
 {
-    private static final Logger LOGGER = Logger.getGlobal();
 
-    private final int port;
-
-    private volatile boolean isStopped;
-
-    private final ServerSocketChannel serverChannel;
-    private final Selector selector;
-
-    private final ActiveConnections connections;
-
-    //TODO: Remove this. It's for echo server purposes
-    private final Map<SocketChannel, String> lastMessageMap = new HashMap<>();
-    //    private final DemoProcessor processor;
     private final Queue<Request> requests = new LinkedList<>();
     private final Queue<ResponseFuture> responses = new LinkedList<>();
-    private final Executor executor = Executors.newVirtualThreadPerTaskExecutor();
-    private final InMemoryClientsRepository repository = new InMemoryClientsRepository();
+    private final ActiveConnections connections;
+    private final ExecutorService executor;
+    private final InMemoryClientsRepository repository;
 
 
-    public Listener(int port) throws IOException
+    public ConnectionHandler(ActiveConnections connections, ExecutorService executor)
     {
-        this.port = port;
-        this.serverChannel = ServerSocketChannel.open();
-        this.selector = Selector.open();
-        this.connections = new ActiveConnections();
-        isStopped = false;
+        this.connections = connections;
+        this.executor = executor;
+        this.repository = new InMemoryClientsRepository();
     }
 
 
-    public void stop()
-    {
-        this.isStopped = false;
-    }
-
-
-    public boolean isStopped()
-    {
-        return this.isStopped;
-    }
-
-
-    @Override
-    public void run()
-    {
-        try
-        {
-            serverChannel.bind(new InetSocketAddress(port));
-            serverChannel.configureBlocking(false);
-            serverChannel.register(selector, SelectionKey.OP_ACCEPT);
-
-            System.out.println("Started..");
-            Instant timeLastAccepted = Instant.now();
-            boolean printTime = true;
-
-            while (!isStopped)
-            {
-                final int readyChannels = selector.select(1000);
-
-                if (this.isStopped || readyChannels == 0)
-                {
-                    continue;
-                }
-
-                for (var key : selector.selectedKeys())
-                {
-                    if (!key.isValid())
-                    {
-                        continue;
-                    }
-
-                    if (key.isAcceptable())
-                    {
-                        handleAccept(key);
-                        timeLastAccepted = Instant.now();
-                        printTime = true;
-                    }
-                    else if (key.isReadable())
-                    {
-                        handleRead(key);
-                    }
-                    else if (key.isWritable())
-                    {
-                        handleWrite(key);
-                    }
-                }
-
-                if (printTime & responses.isEmpty())
-                {
-                    System.out.println("It took " + Duration.between(timeLastAccepted, Instant.now()).toSeconds() + " seconds.");
-                    printTime = false;
-                }
-
-                selector.selectedKeys().clear();
-            }
-        }
-        catch (IOException e)
-        {
-            System.out.println("Failed during listener startup: " + e.getMessage());
-            LOGGER.log(Level.SEVERE, "Failed during listener startup: " + e.getMessage(), e);
-        }
-        catch (ServerException e)
-        {
-            System.out.println("An internal error has occurred: " + e.getMessage());
-            LOGGER.log(Level.SEVERE, "An internal server error has occurred: " + e.getMessage(), e);
-        }
-        finally
-        {
-            System.out.println("Stopping Listener...");
-            stop();
-        }
-    }
-
-
-    private void handleWrite(SelectionKey key) throws ServerException
+    public void handleWrite(SelectionKey key) throws ServerException
     {
         try
         {
@@ -202,7 +96,7 @@ public class Listener implements Runnable, AutoCloseable
     }
 
 
-    private void handleRead(SelectionKey key) throws ServerException
+    public void handleRead(SelectionKey key) throws ServerException
     {
         if (key.channel() instanceof SocketChannel clientChannel)
         {
@@ -223,8 +117,6 @@ public class Listener implements Runnable, AutoCloseable
                     buffer.clear();
                     bytesRead = clientChannel.read(buffer);
                 }
-
-                lastMessageMap.put(clientChannel, sb.toString());
 
                 if (sb.toString().startsWith("register"))
                 {
@@ -285,7 +177,7 @@ public class Listener implements Runnable, AutoCloseable
     }
 
 
-    private void handleAccept(SelectionKey key) throws ServerException
+    public void handleAccept(SelectionKey key) throws ServerException
     {
         try
         {
@@ -320,15 +212,4 @@ public class Listener implements Runnable, AutoCloseable
         }
     }
 
-
-    @Override
-    public void close() throws IOException
-    {
-        System.out.println("Closing Listener...");
-
-        isStopped = true;
-        connections.closeAll();
-        selector.close();
-        serverChannel.close();
-    }
 }

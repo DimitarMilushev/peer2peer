@@ -1,7 +1,9 @@
 package main.java.d.milushev.p2p.server;
 
 
-import java.io.IOException;
+import main.java.d.milushev.p2p.server.exceptions.ServerException;
+import main.java.d.milushev.p2p.server.listener.Listener;
+
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.ConsoleHandler;
@@ -40,7 +42,7 @@ public class Main
 
             System.out.println("Closing resources...");
         }
-        catch (IOException e)
+        catch (ServerException e)
         {
             System.out.println("Exception has occurred during server runtime: " + e);
             e.printStackTrace();
