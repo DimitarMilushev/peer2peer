@@ -6,11 +6,11 @@ import d.milushev.p2p.network_utils.models.ResponseFuture;
 import main.java.d.milushev.p2p.server.BufferUtils;
 import main.java.d.milushev.p2p.server.exceptions.InvalidConnectionHandling;
 import main.java.d.milushev.p2p.server.exceptions.ServerException;
-import main.java.d.milushev.p2p.server.models.commands.CloseUserCommand;
-import main.java.d.milushev.p2p.server.models.commands.ListFilesCommand;
-import main.java.d.milushev.p2p.server.models.commands.RegisterCommand;
-import main.java.d.milushev.p2p.server.models.commands.SlowHelloCommand;
-import main.java.d.milushev.p2p.server.models.commands.UnregisterCommand;
+import main.java.d.milushev.p2p.server.commands.CloseUserCommand;
+import main.java.d.milushev.p2p.server.commands.ListFilesCommand;
+import main.java.d.milushev.p2p.server.commands.RegisterCommand;
+import main.java.d.milushev.p2p.server.commands.SlowHelloCommand;
+import main.java.d.milushev.p2p.server.commands.UnregisterCommand;
 import main.java.d.milushev.p2p.server.repository.InMemoryClientsRepository;
 
 import java.io.IOException;

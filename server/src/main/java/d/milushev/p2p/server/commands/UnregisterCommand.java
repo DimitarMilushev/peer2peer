@@ -1,24 +1,20 @@
-package main.java.d.milushev.p2p.server.models.commands;
+package main.java.d.milushev.p2p.server.commands;
 
 
 import d.milushev.p2p.network_utils.factories.ResponseFactory;
 import d.milushev.p2p.network_utils.models.ResponseFuture;
+import main.java.d.milushev.p2p.server.models.commands.Command;
 import main.java.d.milushev.p2p.server.repository.InMemoryClientsRepository;
 import main.java.d.milushev.p2p.server.repository.models.User;
 
 import java.net.Socket;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 
-/**
- * This Command should allow clients to update their available files. The "username" parameter associates the string with the actual IP of
- * the connection.
- */
-public class RegisterCommand implements Command
+public class UnregisterCommand implements Command
 {
     private static final int MIN_COMMAND_ARGUMENTS = 2;
 
@@ -28,7 +24,7 @@ public class RegisterCommand implements Command
     private final Queue<ResponseFuture> responses;
 
 
-    public RegisterCommand(String input, Socket socket, InMemoryClientsRepository repository, Queue<ResponseFuture> responses)
+    public UnregisterCommand(String input, Socket socket, InMemoryClientsRepository repository, Queue<ResponseFuture> responses)
     {
         this.input = input;
         this.socket = socket;
@@ -41,17 +37,18 @@ public class RegisterCommand implements Command
     public void run()
     {
         final ResponseFuture future = new ResponseFuture(socket.getChannel(), new CompletableFuture<>());
-
         try
         {
             responses.add(future);
 
-            final User result = registerFiles(parseUser(input, socket.getRemoteSocketAddress().toString()));
+            final User user = parseUser(input);
+
+            final User result = repository.removeFilesByUsername(user.name(), user.filePaths());
             future.response().complete(ResponseFactory.createSuccess(result, socket.getChannel()));
         }
         catch (Exception e)
         {
-            System.out.println("Error during RegisterClient command [" + e.getMessage() + "]");
+            System.out.println("Error during UnregisterClient command [" + e.getMessage() + "]");
             e.printStackTrace();
 
             future.response().complete(ResponseFactory.createServerError(e, socket.getChannel()));
@@ -59,18 +56,7 @@ public class RegisterCommand implements Command
     }
 
 
-    private User registerFiles(User user) throws Exception
-    {
-        if (repository.exists(user.name()))
-        {
-            return repository.addFilesByUsername(user.name(), user.filePaths());
-        }
-
-        return repository.addUser(user);
-    }
-
-
-    private User parseUser(String input, String address) throws Exception
+    private User parseUser(String input) throws Exception
     {
         final String[] tokens = input.split(" ");
 
@@ -79,13 +65,14 @@ public class RegisterCommand implements Command
             throw new Exception("Bad command syntax [" + input + "]");
         }
 
-        if (!tokens[0].equalsIgnoreCase("register"))
+        if (!tokens[0].equalsIgnoreCase("unregister"))
         {
             throw new Exception("Invalid command [" + tokens[0] + "]");
         }
 
         final String username = tokens[1];
         final String[] filePaths = Arrays.stream(tokens).skip(2).toArray(String[]::new);
-        return new User(username, address, new HashSet<>(List.of(filePaths)));
+
+        return new User(username, socket.getRemoteSocketAddress().toString(), Set.of(filePaths));
     }
 }

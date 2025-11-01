@@ -1,6 +1,7 @@
-package main.java.d.milushev.p2p.server.models.commands;
+package main.java.d.milushev.p2p.server.commands;
 
 
+import main.java.d.milushev.p2p.server.models.commands.Command;
 import main.java.d.milushev.p2p.server.repository.InMemoryClientsRepository;
 
 import java.net.Socket;

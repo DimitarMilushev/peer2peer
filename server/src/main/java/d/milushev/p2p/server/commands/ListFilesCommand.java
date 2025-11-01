@@ -1,8 +1,9 @@
-package main.java.d.milushev.p2p.server.models.commands;
+package main.java.d.milushev.p2p.server.commands;
 
 
 import d.milushev.p2p.network_utils.factories.ResponseFactory;
 import d.milushev.p2p.network_utils.models.ResponseFuture;
+import main.java.d.milushev.p2p.server.models.commands.Command;
 import main.java.d.milushev.p2p.server.repository.InMemoryClientsRepository;
 import main.java.d.milushev.p2p.server.repository.models.User;
 

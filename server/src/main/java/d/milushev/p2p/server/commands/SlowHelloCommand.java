@@ -1,4 +1,4 @@
-package main.java.d.milushev.p2p.server.models.commands;
+package main.java.d.milushev.p2p.server.commands;
 
 
 import d.milushev.p2p.network_utils.factories.ResponseFactory;
