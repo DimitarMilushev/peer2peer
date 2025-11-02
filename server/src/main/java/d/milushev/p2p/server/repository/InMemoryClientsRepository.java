@@ -1,6 +1,9 @@
 package main.java.d.milushev.p2p.server.repository;
 
 
+import main.java.d.milushev.p2p.server.exceptions.database.DatabaseException;
+import main.java.d.milushev.p2p.server.exceptions.database.EntityAlreadyExistsException;
+import main.java.d.milushev.p2p.server.exceptions.database.EntityNotFoundException;
 import main.java.d.milushev.p2p.server.repository.models.User;
 
 import java.util.List;
@@ -26,12 +29,12 @@ public class InMemoryClientsRepository
     }
 
 
-    public User addUser(User user) throws Exception
+    public User addUser(User user) throws EntityAlreadyExistsException
     {
         System.out.println("Adding new client [" + user.name() + "]");
         if (usersByName.containsKey(user.name()))
         {
-            throw new Exception("User already exists.");
+            throw new EntityAlreadyExistsException("User already exists.");
         }
 
         usersByName.put(user.name(), user);
@@ -41,20 +44,20 @@ public class InMemoryClientsRepository
     }
 
 
-    public User removeFilesByUsername(String username, Set<String> files) throws Exception
+    public User removeFilesByUsername(String username, Set<String> files) throws EntityNotFoundException
     {
         System.out.println("Removing files [" + files + " for user [" + username + "]");
         final User user = usersByName.get(username);
         if (user == null)
         {
-            throw new Exception("User [" + username + "] doesn't exist");
+            throw new EntityNotFoundException("User [" + username + "] doesn't exist");
         }
 
         for (var file : files)
         {
             if (!user.filePaths().contains(file))
             {
-                throw new Exception("No such file [" + file + "] registered by user [" + username + "]");
+                throw new EntityNotFoundException("No such file [" + file + "] registered by user [" + username + "]");
             }
         }
 
@@ -65,20 +68,20 @@ public class InMemoryClientsRepository
     }
 
 
-    public User addFilesByUsername(String username, Set<String> files) throws Exception
+    public User addFilesByUsername(String username, Set<String> files) throws EntityNotFoundException, EntityAlreadyExistsException
     {
         System.out.println("Registering files [" + files + "] for user [" + username + "]");
         final User user = usersByName.get(username);
         if (user == null)
         {
-            throw new Exception("User [" + username + "] doesn't exist");
+            throw new EntityNotFoundException("User [" + username + "] doesn't exist");
         }
 
         for (var file : files)
         {
             if (user.filePaths().contains(file))
             {
-                throw new Exception("User [" + username + "] has already registered file [" + file + "]");
+                throw new EntityAlreadyExistsException("User [" + username + "] has already registered file [" + file + "]");
             }
         }
 
@@ -89,13 +92,13 @@ public class InMemoryClientsRepository
     }
 
 
-    public List<User> removeByAddress(String address) throws Exception
+    public List<User> removeByAddress(String address) throws EntityNotFoundException
     {
         System.out.println("Removing usernames with address [" + address + "]");
         List<User> users = usersByName.values().stream().filter(user -> user.address().equals(address)).toList();
         if (users.isEmpty())
         {
-            throw new Exception("No such address [" + address + "]");
+            throw new EntityNotFoundException("No such address [" + address + "]");
         }
 
         for (var user : users)
