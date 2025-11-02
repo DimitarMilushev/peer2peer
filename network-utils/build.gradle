@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-group = 'org.example'
+group = 'd.milushev.p2p.network_utils'
 version = '1.0-SNAPSHOT'
 
 repositories {

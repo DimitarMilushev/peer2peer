@@ -5,12 +5,11 @@ import d.milushev.p2p.network_utils.enums.ResponseCodes;
 import d.milushev.p2p.network_utils.models.Response;
 
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.Executors;
 
 
 public class ResponseFactory
 {
-    public static Response createClientError(Executors error, SocketChannel channel)
+    public static Response createClientError(Exception error, SocketChannel channel)
     {
         return new Response(error, ResponseCodes.CLIENT_ERROR.getErrorCode(), channel);
     }

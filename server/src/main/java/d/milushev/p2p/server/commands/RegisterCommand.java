@@ -3,6 +3,8 @@ package main.java.d.milushev.p2p.server.commands;
 
 import d.milushev.p2p.network_utils.factories.ResponseFactory;
 import d.milushev.p2p.network_utils.models.ResponseFuture;
+import main.java.d.milushev.p2p.server.exceptions.ClientException;
+import main.java.d.milushev.p2p.server.exceptions.database.EntityAlreadyExistsException;
 import main.java.d.milushev.p2p.server.repository.InMemoryClientsRepository;
 import main.java.d.milushev.p2p.server.repository.models.User;
 
@@ -49,17 +51,24 @@ public class RegisterCommand implements Command
             final User result = registerFiles(parseUser(input, socket.getRemoteSocketAddress().toString()));
             future.response().complete(ResponseFactory.createSuccess(result, socket.getChannel()));
         }
-        catch (Exception e)
+        catch (EntityAlreadyExistsException e)
         {
-            System.out.println("Error during RegisterClient command [" + e.getMessage() + "]");
+            System.out.println("Server error during RegisterClient command [" + e.getMessage() + "]");
             e.printStackTrace();
 
             future.response().complete(ResponseFactory.createServerError(e, socket.getChannel()));
         }
+        catch (ClientException e)
+        {
+            System.out.println("Client error during RegisterClient command [" + e.getMessage() + "]");
+
+
+            future.response().complete(ResponseFactory.createClientError(e, socket.getChannel()));
+        }
     }
 
 
-    private User registerFiles(User user) throws Exception
+    private User registerFiles(User user) throws EntityAlreadyExistsException
     {
         if (repository.exists(user.name()))
         {
@@ -70,22 +79,29 @@ public class RegisterCommand implements Command
     }
 
 
-    private User parseUser(String input, String address) throws Exception
+    private User parseUser(String input, String address) throws ClientException
     {
-        final String[] tokens = input.split(" ");
-
-        if (tokens.length < MIN_COMMAND_ARGUMENTS)
+        try
         {
-            throw new Exception("Bad command syntax [" + input + "]");
-        }
+            final String[] tokens = input.split(" ");
 
-        if (!tokens[0].equalsIgnoreCase("register"))
+            if (tokens.length < MIN_COMMAND_ARGUMENTS)
+            {
+                throw new Exception("Bad command syntax [" + input + "]");
+            }
+
+            if (!tokens[0].equalsIgnoreCase("register"))
+            {
+                throw new Exception("Invalid command [" + tokens[0] + "]");
+            }
+
+            final String username = tokens[1];
+            final String[] filePaths = Arrays.stream(tokens).skip(2).toArray(String[]::new);
+            return new User(username, address, new HashSet<>(List.of(filePaths)));
+        }
+        catch (Exception e)
         {
-            throw new Exception("Invalid command [" + tokens[0] + "]");
+            throw new ClientException(e.getMessage(), e, null, socket);
         }
-
-        final String username = tokens[1];
-        final String[] filePaths = Arrays.stream(tokens).skip(2).toArray(String[]::new);
-        return new User(username, address, new HashSet<>(List.of(filePaths)));
     }
 }
