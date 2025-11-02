@@ -3,6 +3,8 @@ package main.java.d.milushev.p2p.server.commands;
 
 import d.milushev.p2p.network_utils.factories.ResponseFactory;
 import d.milushev.p2p.network_utils.models.ResponseFuture;
+import main.java.d.milushev.p2p.server.exceptions.ClientException;
+import main.java.d.milushev.p2p.server.exceptions.database.EntityNotFoundException;
 import main.java.d.milushev.p2p.server.repository.InMemoryClientsRepository;
 import main.java.d.milushev.p2p.server.repository.models.User;
 
@@ -45,33 +47,43 @@ public class UnregisterCommand implements Command
             final User result = repository.removeFilesByUsername(user.name(), user.filePaths());
             future.response().complete(ResponseFactory.createSuccess(result, socket.getChannel()));
         }
-        catch (Exception e)
+        catch (EntityNotFoundException e)
         {
-            System.out.println("Error during UnregisterClient command [" + e.getMessage() + "]");
-            e.printStackTrace();
-
+            System.out.println("Server error during UnregisterClient command [" + e.getMessage() + "]");
             future.response().complete(ResponseFactory.createServerError(e, socket.getChannel()));
+        }
+        catch (ClientException e)
+        {
+            System.out.println("Client error during UnregisterClient command [" + e.getMessage() + "]");
+            future.response().complete(ResponseFactory.createClientError(e, socket.getChannel()));
         }
     }
 
 
-    private User parseUser(String input) throws Exception
+    private User parseUser(String input) throws ClientException
     {
-        final String[] tokens = input.split(" ");
-
-        if (tokens.length < MIN_COMMAND_ARGUMENTS)
+        try
         {
-            throw new Exception("Bad command syntax [" + input + "]");
-        }
+            final String[] tokens = input.split(" ");
 
-        if (!tokens[0].equalsIgnoreCase("unregister"))
+            if (tokens.length < MIN_COMMAND_ARGUMENTS)
+            {
+                throw new Exception("Bad command syntax [" + input + "]");
+            }
+
+            if (!tokens[0].equalsIgnoreCase("unregister"))
+            {
+                throw new Exception("Invalid command [" + tokens[0] + "]");
+            }
+
+            final String username = tokens[1];
+            final String[] filePaths = Arrays.stream(tokens).skip(2).toArray(String[]::new);
+
+            return new User(username, socket.getRemoteSocketAddress().toString(), Set.of(filePaths));
+        }
+        catch (Exception e)
         {
-            throw new Exception("Invalid command [" + tokens[0] + "]");
+            throw new ClientException("Error while parsing", e, null, socket);
         }
-
-        final String username = tokens[1];
-        final String[] filePaths = Arrays.stream(tokens).skip(2).toArray(String[]::new);
-
-        return new User(username, socket.getRemoteSocketAddress().toString(), Set.of(filePaths));
     }
 }
