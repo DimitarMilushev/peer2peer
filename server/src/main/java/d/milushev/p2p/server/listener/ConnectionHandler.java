@@ -108,7 +108,7 @@ public class ConnectionHandler
                 while (bytesRead > 0)
                 {
                     buffer.flip();
-                    sb.append(BufferUtils.BufferToString(buffer, bytesRead));
+                    sb.append(BufferUtils.bufferToString(buffer, bytesRead));
 
                     buffer.clear();
                     bytesRead = clientChannel.read(buffer);
