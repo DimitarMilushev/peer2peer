@@ -1,0 +1,29 @@
+plugins {
+    id 'java'
+}
+
+group = 'd.milushev.p2p.client'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation platform('org.junit:junit-bom:5.10.0')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+
+    implementation project(':network-utils')
+ }
+
+test {
+    useJUnitPlatform()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src'] // Adjust this to your existing source directory
+        }
+    }
+}
