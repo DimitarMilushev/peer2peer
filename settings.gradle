@@ -1,0 +1,5 @@
+rootProject.name = 'p2p'
+
+include ':network-utils'
+include ':server'
+include ':client'
