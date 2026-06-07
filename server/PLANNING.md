@@ -23,14 +23,17 @@
   - Returns a list of user - file (ordered by user)
 
 ### Architecture
-- Processor
-  - Resolves commands and calls the needed services
 - UsersMetadataRepository
   - Holds mappings of users metadata
-- Listener
-  - The main listener that adds new connections and handles server state
+- Listener (Registers a socket server and handles connections)
+  - ConnectionHandler (Handles socket input and output through commands)
+  - ActiveConnections (Handles the active connections)
 - ConsoleInputListener
   - Captures console inputs
+
+##### Low priority
 - EventDispatcher
   - Handles all types of operations within it.
 
+- Processor
+  - Resolves commands and calls the needed services

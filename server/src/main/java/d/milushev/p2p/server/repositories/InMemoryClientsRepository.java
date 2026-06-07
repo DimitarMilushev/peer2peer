@@ -1,10 +1,9 @@
-package main.java.d.milushev.p2p.server.repository;
+package main.java.d.milushev.p2p.server.repositories;
 
 
-import main.java.d.milushev.p2p.server.exceptions.database.DatabaseException;
-import main.java.d.milushev.p2p.server.exceptions.database.EntityAlreadyExistsException;
-import main.java.d.milushev.p2p.server.exceptions.database.EntityNotFoundException;
-import main.java.d.milushev.p2p.server.repository.models.User;
+import main.java.d.milushev.p2p.server.exceptions.repository.EntityAlreadyExistsException;
+import main.java.d.milushev.p2p.server.exceptions.repository.EntityNotFoundException;
+import main.java.d.milushev.p2p.server.repositories.models.User;
 
 import java.util.List;
 import java.util.Set;

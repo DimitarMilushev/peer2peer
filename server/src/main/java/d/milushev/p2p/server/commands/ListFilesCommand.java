@@ -3,14 +3,13 @@ package main.java.d.milushev.p2p.server.commands;
 
 import d.milushev.p2p.network_utils.factories.ResponseFactory;
 import d.milushev.p2p.network_utils.models.ResponseFuture;
-import main.java.d.milushev.p2p.server.repository.InMemoryClientsRepository;
-import main.java.d.milushev.p2p.server.repository.models.User;
+import main.java.d.milushev.p2p.server.repositories.InMemoryClientsRepository;
+import main.java.d.milushev.p2p.server.repositories.models.User;
 
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 
 public class ListFilesCommand implements Command
@@ -44,6 +43,11 @@ public class ListFilesCommand implements Command
 
     private String getFilesByUser(User user)
     {
-        return user.filePaths().stream().map(x -> user.name() + " : " + x).collect(Collectors.joining(", "));
+        if (user.filePaths().isEmpty())
+        {
+            return user.name() + " : []";
+        }
+
+        return user.name() + " : [" + String.join(", ", user.filePaths()) + "]";
     }
 }

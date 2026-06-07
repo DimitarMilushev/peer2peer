@@ -1,4 +1,4 @@
-package main.java.d.milushev.p2p.server.exceptions.database;
+package main.java.d.milushev.p2p.server.exceptions.repository;
 
 import java.io.Serial;
 import java.io.Serializable;

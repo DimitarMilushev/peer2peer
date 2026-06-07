@@ -1,4 +1,4 @@
-package main.java.d.milushev.p2p.server.repository.models;
+package main.java.d.milushev.p2p.server.repositories.models;
 
 
 import java.util.Set;

@@ -1,11 +1,15 @@
 package main.java.d.milushev.p2p.server.listener;
 
 
+import main.java.d.milushev.p2p.server.exceptions.listener.ConnectionAlreadyExistsException;
+import main.java.d.milushev.p2p.server.exceptions.listener.ConnectionNotFoundException;
+
 import java.io.IOException;
+import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.channels.SocketChannel;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 
@@ -13,7 +17,7 @@ public class ActiveConnections
 {
     private static final int DEFAULT_BUFFER_SIZE_BYTES = 1024;
 
-    private final Map<SocketChannel, ByteBuffer> connections;
+    private final Map<Socket, ByteBuffer> connections;
 
 
     public ActiveConnections()
@@ -22,33 +26,36 @@ public class ActiveConnections
     }
 
 
-    public ByteBuffer getBuffer(SocketChannel channel) throws Exception
+    public ByteBuffer getBuffer(Socket channel) throws ConnectionNotFoundException
     {
+        Objects.requireNonNull(channel, "Channel cannot be null");
         if (!this.connections.containsKey(channel))
         {
-            throw new Exception("No such connection [" + channel.getRemoteAddress() + "]");
+            throw new ConnectionNotFoundException("No such connection [" + channel.getRemoteSocketAddress() + "]");
         }
 
         return this.connections.get(channel);
     }
 
 
-    public void add(SocketChannel channel) throws Exception
+    public void add(Socket channel) throws ConnectionAlreadyExistsException
     {
+        Objects.requireNonNull(channel, "Channel cannot be null");
         if (this.connections.containsKey(channel))
         {
-            throw new Exception("Connection already exists [" + channel.getRemoteAddress() + "]");
+            throw new ConnectionAlreadyExistsException("Connection already exists [" + channel.getRemoteSocketAddress() + "]");
         }
 
         this.connections.put(channel, ByteBuffer.allocate(DEFAULT_BUFFER_SIZE_BYTES));
     }
 
 
-    public void remove(SocketChannel channel) throws Exception
+    public void remove(Socket channel) throws ConnectionNotFoundException
     {
+        Objects.requireNonNull(channel, "Channel cannot be null");
         if (!this.connections.containsKey(channel))
         {
-            throw new Exception("No such connection [" + channel.getRemoteAddress() + "]");
+            throw new ConnectionNotFoundException("No such connection [" + channel.getRemoteSocketAddress() + "]");
         }
 
         connections.remove(channel);
@@ -68,21 +75,6 @@ public class ActiveConnections
     @Override
     public String toString()
     {
-        return connections.keySet().stream().map(this::getRemoteAddress).collect(Collectors.joining());
-    }
-
-
-    private String getRemoteAddress(SocketChannel channel)
-    {
-        try
-        {
-            return channel.getRemoteAddress().toString();
-        }
-        catch (IOException e)
-        {
-            System.out.println("Failed to retrieve address " + e.getMessage());
-
-            return "";
-        }
+        return connections.keySet().stream().map(x -> x.getRemoteSocketAddress().toString()).collect(Collectors.joining());
     }
 }

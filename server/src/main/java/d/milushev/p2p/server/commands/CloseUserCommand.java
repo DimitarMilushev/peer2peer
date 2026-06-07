@@ -1,7 +1,7 @@
 package main.java.d.milushev.p2p.server.commands;
 
 
-import main.java.d.milushev.p2p.server.repository.InMemoryClientsRepository;
+import main.java.d.milushev.p2p.server.repositories.InMemoryClientsRepository;
 
 import java.net.Socket;
 

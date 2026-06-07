@@ -4,9 +4,12 @@ package main.java.d.milushev.p2p.server.commands;
 import d.milushev.p2p.network_utils.factories.ResponseFactory;
 import d.milushev.p2p.network_utils.models.ResponseFuture;
 import main.java.d.milushev.p2p.server.exceptions.ClientException;
-import main.java.d.milushev.p2p.server.exceptions.database.EntityNotFoundException;
-import main.java.d.milushev.p2p.server.repository.InMemoryClientsRepository;
-import main.java.d.milushev.p2p.server.repository.models.User;
+import main.java.d.milushev.p2p.server.exceptions.command.MissingArgumentsCommandException;
+import main.java.d.milushev.p2p.server.exceptions.command.CommandException;
+import main.java.d.milushev.p2p.server.exceptions.command.InvalidCommandException;
+import main.java.d.milushev.p2p.server.exceptions.repository.EntityNotFoundException;
+import main.java.d.milushev.p2p.server.repositories.InMemoryClientsRepository;
+import main.java.d.milushev.p2p.server.repositories.models.User;
 
 import java.net.Socket;
 import java.util.Arrays;
@@ -44,13 +47,8 @@ public class UnregisterCommand implements Command
 
             final User user = parseUser(input);
 
-            final User result = repository.removeFilesByUsername(user.name(), user.filePaths());
+            final User result = unregister(user);
             future.response().complete(ResponseFactory.createSuccess(result, socket.getChannel()));
-        }
-        catch (EntityNotFoundException e)
-        {
-            System.out.println("Server error during UnregisterClient command [" + e.getMessage() + "]");
-            future.response().complete(ResponseFactory.createServerError(e, socket.getChannel()));
         }
         catch (ClientException e)
         {
@@ -60,20 +58,38 @@ public class UnregisterCommand implements Command
     }
 
 
-    private User parseUser(String input) throws ClientException
+    private User unregister(User user) throws ClientException
     {
         try
         {
-            final String[] tokens = input.split(" ");
+            return repository.removeFilesByUsername(user.name(), user.filePaths());
+        }
+        catch (EntityNotFoundException e)
+        {
+            throw new ClientException(
+                    "Error while unregistering files for user [" + user.name() + "]",
+                    e,
+                    null,
+                    socket.getRemoteSocketAddress().toString()
+            );
+        }
+    }
 
+
+    private User parseUser(String input) throws ClientException
+    {
+        final String[] tokens = input.split(" ");
+
+        try
+        {
             if (tokens.length < MIN_COMMAND_ARGUMENTS)
             {
-                throw new Exception("Bad command syntax [" + input + "]");
+                throw new MissingArgumentsCommandException("Missing arguments [" + input + "]");
             }
 
             if (!tokens[0].equalsIgnoreCase("unregister"))
             {
-                throw new Exception("Invalid command [" + tokens[0] + "]");
+                throw new InvalidCommandException("Invalid command [" + tokens[0] + "]");
             }
 
             final String username = tokens[1];
@@ -81,9 +97,14 @@ public class UnregisterCommand implements Command
 
             return new User(username, socket.getRemoteSocketAddress().toString(), Set.of(filePaths));
         }
-        catch (Exception e)
+        catch (CommandException e)
         {
-            throw new ClientException("Error while parsing", e, null, socket);
+            throw new ClientException(
+                    "Error while parsing input [" + input + "]",
+                    e,
+                    null,
+                    socket.getRemoteSocketAddress().toString()
+            );
         }
     }
 }

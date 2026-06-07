@@ -4,9 +4,13 @@ package main.java.d.milushev.p2p.server.commands;
 import d.milushev.p2p.network_utils.factories.ResponseFactory;
 import d.milushev.p2p.network_utils.models.ResponseFuture;
 import main.java.d.milushev.p2p.server.exceptions.ClientException;
-import main.java.d.milushev.p2p.server.exceptions.database.EntityAlreadyExistsException;
-import main.java.d.milushev.p2p.server.repository.InMemoryClientsRepository;
-import main.java.d.milushev.p2p.server.repository.models.User;
+import main.java.d.milushev.p2p.server.exceptions.command.CommandException;
+import main.java.d.milushev.p2p.server.exceptions.command.InvalidCommandException;
+import main.java.d.milushev.p2p.server.exceptions.command.MissingArgumentsCommandException;
+import main.java.d.milushev.p2p.server.exceptions.repository.EntityAlreadyExistsException;
+import main.java.d.milushev.p2p.server.exceptions.repository.EntityNotFoundException;
+import main.java.d.milushev.p2p.server.repositories.InMemoryClientsRepository;
+import main.java.d.milushev.p2p.server.repositories.models.User;
 
 import java.net.Socket;
 import java.util.Arrays;
@@ -47,32 +51,37 @@ public class RegisterCommand implements Command
         try
         {
             responses.add(future);
+            final User user = parseUser(input, socket.getRemoteSocketAddress().toString());
 
-            final User result = registerFiles(parseUser(input, socket.getRemoteSocketAddress().toString()));
+            final User result = register(user);
             future.response().complete(ResponseFactory.createSuccess(result, socket.getChannel()));
-        }
-        catch (EntityAlreadyExistsException e)
-        {
-            System.out.println("Server error during RegisterClient command [" + e.getMessage() + "]");
-            e.printStackTrace();
-
-            future.response().complete(ResponseFactory.createServerError(e, socket.getChannel()));
         }
         catch (ClientException e)
         {
             System.out.println("Client error during RegisterClient command [" + e.getMessage() + "]");
-
 
             future.response().complete(ResponseFactory.createClientError(e, socket.getChannel()));
         }
     }
 
 
-    private User registerFiles(User user) throws EntityAlreadyExistsException
+    private User register(User user) throws ClientException
     {
         if (repository.exists(user.name()))
         {
-            return repository.addFilesByUsername(user.name(), user.filePaths());
+            try
+            {
+                return repository.addFilesByUsername(user.name(), user.filePaths());
+            }
+            catch (EntityNotFoundException | EntityAlreadyExistsException e)
+            {
+                throw new ClientException(
+                        "Error occurred while registering files for user [" + user.name() + "]",
+                        e,
+                        null,
+                        socket.getRemoteSocketAddress().toString()
+                );
+            }
         }
 
         return repository.addUser(user);
@@ -81,27 +90,33 @@ public class RegisterCommand implements Command
 
     private User parseUser(String input, String address) throws ClientException
     {
+        final String[] tokens = input.split(" ");
+
         try
         {
-            final String[] tokens = input.split(" ");
-
             if (tokens.length < MIN_COMMAND_ARGUMENTS)
             {
-                throw new Exception("Bad command syntax [" + input + "]");
+                throw new MissingArgumentsCommandException("Missing arguments [" + input + "]");
             }
 
+            //TODO: check if not server error???
             if (!tokens[0].equalsIgnoreCase("register"))
             {
-                throw new Exception("Invalid command [" + tokens[0] + "]");
+                throw new InvalidCommandException("Invalid command [" + tokens[0] + "]");
             }
-
-            final String username = tokens[1];
-            final String[] filePaths = Arrays.stream(tokens).skip(2).toArray(String[]::new);
-            return new User(username, address, new HashSet<>(List.of(filePaths)));
         }
-        catch (Exception e)
+        catch (CommandException e)
         {
-            throw new ClientException(e.getMessage(), e, null, socket);
+            throw new ClientException(
+                    "Error while parsing input [" + input + "]",
+                    e,
+                    null,
+                    socket.getRemoteSocketAddress().toString()
+            );
         }
+
+        final String username = tokens[1];
+        final String[] filePaths = Arrays.stream(tokens).skip(2).toArray(String[]::new);
+        return new User(username, address, new HashSet<>(List.of(filePaths)));
     }
 }
