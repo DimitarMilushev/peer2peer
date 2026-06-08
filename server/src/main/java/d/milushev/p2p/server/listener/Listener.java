@@ -10,13 +10,13 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 public class Listener implements Runnable, AutoCloseable
 {
-    private static final Logger LOGGER = Logger.getGlobal();
+    private static final Logger LOG = LogManager.getLogger(Listener.class);
 
     private final int port;
 
@@ -72,7 +72,7 @@ public class Listener implements Runnable, AutoCloseable
             serverChannel.configureBlocking(false);
             serverChannel.register(selector, SelectionKey.OP_ACCEPT);
 
-            System.out.println("Started..");
+            LOG.info("Started..");
 
             while (!isStopped)
             {
@@ -109,17 +109,15 @@ public class Listener implements Runnable, AutoCloseable
         }
         catch (IOException e)
         {
-            System.out.println("Failed during listener startup: " + e.getMessage());
-            LOGGER.log(Level.SEVERE, "Failed during listener startup: " + e.getMessage(), e);
+            LOG.error("Failed during listener startup: {}", e.getMessage(), e);
         }
         catch (ServerException e)
         {
-            System.out.println("An internal error has occurred: " + e.getMessage());
-            LOGGER.log(Level.SEVERE, "An internal server error has occurred: " + e.getMessage(), e);
+            LOG.error("An internal server error has occurred: {}", e.getMessage(), e);
         }
         finally
         {
-            System.out.println("Stopping Listener...");
+            LOG.info("Stopping Listener...");
             stop();
         }
     }
@@ -128,7 +126,7 @@ public class Listener implements Runnable, AutoCloseable
     @Override
     public void close() throws ServerException
     {
-        System.out.println("Closing Listener...");
+        LOG.info("Closing Listener...");
 
         isStopped = true;
 

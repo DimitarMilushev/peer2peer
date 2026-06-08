@@ -6,6 +6,11 @@ import java.nio.ByteBuffer;
 
 public class BufferUtils
 {
+    private BufferUtils()
+    {
+    }
+
+
     public static String bufferToString(ByteBuffer buffer, int bytesRead)
     {
         return new String(buffer.array(), buffer.position(), bytesRead);

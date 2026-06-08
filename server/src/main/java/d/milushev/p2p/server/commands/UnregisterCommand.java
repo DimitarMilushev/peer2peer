@@ -12,6 +12,8 @@ import main.java.d.milushev.p2p.server.repositories.InMemoryClientsRepository;
 import main.java.d.milushev.p2p.server.repositories.models.User;
 
 import java.net.Socket;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import java.util.Arrays;
 import java.util.Queue;
 import java.util.Set;
@@ -20,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 
 public class UnregisterCommand implements Command
 {
+    private static final Logger LOG = LogManager.getLogger(UnregisterCommand.class);
     private static final int MIN_COMMAND_ARGUMENTS = 2;
 
     private final String input;
@@ -52,7 +55,7 @@ public class UnregisterCommand implements Command
         }
         catch (ClientException e)
         {
-            System.out.println("Client error during UnregisterClient command [" + e.getMessage() + "]");
+            LOG.info("Client error during UnregisterClient command", e);
             future.response().complete(ResponseFactory.createClientError(e, socket.getChannel()));
         }
     }

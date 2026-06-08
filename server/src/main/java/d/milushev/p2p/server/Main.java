@@ -3,28 +3,20 @@ package main.java.d.milushev.p2p.server;
 
 import main.java.d.milushev.p2p.server.exceptions.ServerException;
 import main.java.d.milushev.p2p.server.listener.Listener;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 
 public class Main
 {
-    private static final Logger LOGGER = Logger.getLogger(Main.class.getName());
-
+    private static final Logger LOG = LogManager.getLogger(Main.class);
 
     public static void main(String[] args) throws InterruptedException
     {
-        ConsoleHandler handler = new ConsoleHandler();
-        handler.setFormatter(new SimpleFormatter());
-        handler.setLevel(Level.ALL);
-        LOGGER.addHandler(handler);
-        LOGGER.setLevel(Level.ALL);
-        LOGGER.setUseParentHandlers(false); // Prevent double logging
+        LOG.info("Starting server...");
 
         final AtomicBoolean stopSignal = new AtomicBoolean(false);
 
@@ -40,14 +32,14 @@ public class Main
                 Thread.sleep(1000);
             }
 
-            System.out.println("Closing resources...");
+
+            LOG.info("Closing resources...");
         }
         catch (ServerException e)
         {
-            System.out.println("Exception has occurred during server runtime: " + e);
-            e.printStackTrace();
+            LOG.error("Exception has occurred during server runtime", e);
         }
 
-        System.out.println("Server stopped");
+        LOG.info("Server stopped");
     }
 }
