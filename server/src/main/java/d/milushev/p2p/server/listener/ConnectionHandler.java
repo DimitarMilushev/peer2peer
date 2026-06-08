@@ -23,11 +23,14 @@ import java.nio.charset.StandardCharsets;
 import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.ExecutorService;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 public class ConnectionHandler
 {
 
+    private static final Logger LOG = LogManager.getLogger(ConnectionHandler.class);
     //    private final Queue<Request> requests = new LinkedList<>();
     private final Queue<ResponseFuture> responses;
     private final ActiveConnections connections;
@@ -58,7 +61,7 @@ public class ConnectionHandler
                     return;
                 }
 
-                System.out.println("Handling WRITE for [" + socket.getRemoteSocketAddress() + "]");
+                LOG.info("Handling WRITE for [{}]", socket.getRemoteSocketAddress());
                 if (!responses.peek().response().isDone())
                 {
                     return;
@@ -78,7 +81,7 @@ public class ConnectionHandler
 
                 buffer.clear();
                 key.interestOps(SelectionKey.OP_READ);
-                System.out.println("Successfully handled WRITE for [" + socket.getRemoteSocketAddress() + "]: " + response);
+                LOG.info("Successfully handled WRITE for [{}]: {}", socket.getRemoteSocketAddress(), response);
                 return;
             }
 
@@ -96,7 +99,7 @@ public class ConnectionHandler
         if (key.channel() instanceof SocketChannel clientChannel)
         {
             final var socket = clientChannel.socket();
-            System.out.println("Handling read for [" + socket.getRemoteSocketAddress() + "]");
+            LOG.info("Handling read for [{}]", socket.getRemoteSocketAddress());
 
             try
             {
@@ -138,11 +141,11 @@ public class ConnectionHandler
                 }
 
                 key.interestOps(SelectionKey.OP_WRITE);
-                System.out.println("READ finished for [" + socket.getRemoteSocketAddress() + "]: " + sb);
+                LOG.info("READ finished for [{}]: {}", socket.getRemoteSocketAddress(), sb);
             }
             catch (Exception e)
             {
-                System.out.println("Connection issue. Closing channel [" + socket.getRemoteSocketAddress() + "]");
+                LOG.error("Connection issue. Closing channel [{}]", socket.getRemoteSocketAddress(), e);
                 closeClientChannel(socket);
 
                 throw new ServerException("Failed to process READ operation", e);
@@ -158,7 +161,7 @@ public class ConnectionHandler
 
     private void closeClientChannel(Socket socket) throws ServerException
     {
-        System.out.println("Closing client channel [" + socket.getRemoteSocketAddress() + "]");
+        LOG.info("Closing client channel [{}]", socket.getRemoteSocketAddress());
 
         try
         {
@@ -180,7 +183,7 @@ public class ConnectionHandler
         {
             if (key.channel() instanceof ServerSocketChannel serverChannel)
             {
-                System.out.println("Handling ACCEPT");
+                LOG.info("Handling ACCEPT");
                 final var channel = serverChannel.accept();
                 final var socket = channel.socket();
 
@@ -189,7 +192,7 @@ public class ConnectionHandler
                 key.attach(ByteBuffer.allocate(1024));
 
                 connections.add(socket);
-                System.out.println("Successfully accepted client channel [" + socket.getRemoteSocketAddress() + "]");
+                LOG.info("Successfully accepted client channel [{}]", socket.getRemoteSocketAddress());
                 return;
             }
 

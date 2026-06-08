@@ -7,12 +7,15 @@ import main.java.d.milushev.p2p.server.repositories.models.User;
 
 import java.util.List;
 import java.util.Set;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 
 public class InMemoryClientsRepository
 {
+    private static final Logger LOG = LogManager.getLogger(InMemoryClientsRepository.class);
     private final ConcurrentMap<String, User> usersByName;
 
 
@@ -30,14 +33,14 @@ public class InMemoryClientsRepository
 
     public User addUser(User user) throws EntityAlreadyExistsException
     {
-        System.out.println("Adding new client [" + user.name() + "]");
+        LOG.info("Adding new client [{}]", user.name());
         if (usersByName.containsKey(user.name()))
         {
             throw new EntityAlreadyExistsException("User already exists.");
         }
 
         usersByName.put(user.name(), user);
-        System.out.println("Successfully added new client [" + user.name() + "]");
+        LOG.info("Successfully added new client [{}]", user.name());
 
         return usersByName.get(user.name());
     }
@@ -45,7 +48,7 @@ public class InMemoryClientsRepository
 
     public User removeFilesByUsername(String username, Set<String> files) throws EntityNotFoundException
     {
-        System.out.println("Removing files [" + files + " for user [" + username + "]");
+        LOG.info("Removing files [{}] for user [{}]", files, username);
         final User user = usersByName.get(username);
         if (user == null)
         {
@@ -61,7 +64,7 @@ public class InMemoryClientsRepository
         }
 
         user.filePaths().removeAll(files);
-        System.out.println("Successfully removed [" + files + "] for user [" + username + "]");
+        LOG.info("Successfully removed [{}] for user [{}]", files, username);
 
         return usersByName.get(username);
     }
@@ -69,7 +72,7 @@ public class InMemoryClientsRepository
 
     public User addFilesByUsername(String username, Set<String> files) throws EntityNotFoundException, EntityAlreadyExistsException
     {
-        System.out.println("Registering files [" + files + "] for user [" + username + "]");
+        LOG.info("Registering files [{}] for user [{}]", files, username);
         final User user = usersByName.get(username);
         if (user == null)
         {
@@ -85,7 +88,7 @@ public class InMemoryClientsRepository
         }
 
         user.filePaths().addAll(files);
-        System.out.println("Successfully registered files [" + files + "] for user [" + username + "]");
+        LOG.info("Successfully registered files [{}] for user [{}]", files, username);
 
         return usersByName.get(username);
     }
@@ -93,7 +96,7 @@ public class InMemoryClientsRepository
 
     public List<User> removeByAddress(String address) throws EntityNotFoundException
     {
-        System.out.println("Removing usernames with address [" + address + "]");
+        LOG.info("Removing usernames with address [{}]", address);
         List<User> users = usersByName.values().stream().filter(user -> user.address().equals(address)).toList();
         if (users.isEmpty())
         {
@@ -105,7 +108,7 @@ public class InMemoryClientsRepository
             usersByName.remove(user.name());
         }
 
-        System.out.println("Successfully removed users [" + users + "]");
+        LOG.info("Successfully removed users [{}]", users);
         return users;
     }
 
