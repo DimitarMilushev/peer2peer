@@ -2,19 +2,20 @@ package main.java.d.milushev.p2p.server;
 
 
 import java.util.Scanner;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class ConsoleInputListener implements Runnable, AutoCloseable
 {
     private static final Logger LOG = LogManager.getLogger(ConsoleInputListener.class);
-    private final AtomicBoolean isStopped;
+    private AtomicBoolean isStopped;
 
-    public ConsoleInputListener(AtomicBoolean isStopped)
+    public ConsoleInputListener(AtomicBoolean stopSignal)
     {
-        this.isStopped = isStopped;
+        this.isStopped = stopSignal;
     }
 
     @Override
@@ -41,5 +42,14 @@ public class ConsoleInputListener implements Runnable, AutoCloseable
         LOG.info("Closing Console...");
 
         this.isStopped.set(true);
+
+        try
+        {
+            Thread.currentThread().join();
+        }
+        catch (InterruptedException e)
+        {
+            LOG.error("Error while waiting for console thread to finish: {}", e.getMessage(), e);
+        }
     }
 }

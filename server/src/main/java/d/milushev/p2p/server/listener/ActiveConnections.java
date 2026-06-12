@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 public class ActiveConnections
 {
     private static final int DEFAULT_BUFFER_SIZE_BYTES = 1024;
+    private static final String NULL_CHANNEL_MESSAGE = "Channel cannot be null";
 
     private final Map<Socket, ByteBuffer> connections;
 
@@ -28,7 +29,7 @@ public class ActiveConnections
 
     public ByteBuffer getBuffer(Socket channel) throws ConnectionNotFoundException
     {
-        Objects.requireNonNull(channel, "Channel cannot be null");
+        Objects.requireNonNull(channel, NULL_CHANNEL_MESSAGE);
         if (!this.connections.containsKey(channel))
         {
             throw new ConnectionNotFoundException("No such connection [" + channel.getRemoteSocketAddress() + "]");
@@ -40,7 +41,7 @@ public class ActiveConnections
 
     public void add(Socket channel) throws ConnectionAlreadyExistsException
     {
-        Objects.requireNonNull(channel, "Channel cannot be null");
+        Objects.requireNonNull(channel, NULL_CHANNEL_MESSAGE);
         if (this.connections.containsKey(channel))
         {
             throw new ConnectionAlreadyExistsException("Connection already exists [" + channel.getRemoteSocketAddress() + "]");
@@ -52,7 +53,7 @@ public class ActiveConnections
 
     public void remove(Socket channel) throws ConnectionNotFoundException
     {
-        Objects.requireNonNull(channel, "Channel cannot be null");
+        Objects.requireNonNull(channel, NULL_CHANNEL_MESSAGE);
         if (!this.connections.containsKey(channel))
         {
             throw new ConnectionNotFoundException("No such connection [" + channel.getRemoteSocketAddress() + "]");

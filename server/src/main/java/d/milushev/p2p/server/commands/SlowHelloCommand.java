@@ -12,6 +12,8 @@ import java.util.concurrent.CompletableFuture;
 
 public class SlowHelloCommand implements Command
 {
+    public static final String NAME = "slow-hello";
+
     private final Queue<ResponseFuture> queue;
     private final Request request;
 

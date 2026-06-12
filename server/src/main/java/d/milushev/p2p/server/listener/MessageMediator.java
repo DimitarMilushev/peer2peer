@@ -1,7 +1,6 @@
 package main.java.d.milushev.p2p.server.listener;
 
 
-import d.milushev.p2p.network_utils.factories.RequestFactory;
 import d.milushev.p2p.network_utils.models.Request;
 import d.milushev.p2p.network_utils.models.Response;
 import d.milushev.p2p.network_utils.models.ResponseFuture;
@@ -18,22 +17,29 @@ import java.util.concurrent.LinkedBlockingQueue;
 /**
  * A class that handles inbound and outbound messages.
  */
-public class MessageDispatcher
+public class MessageMediator
 {
-    private static final Logger LOG = LogManager.getLogger(MessageDispatcher.class);
+    private static final Logger LOG = LogManager.getLogger(MessageMediator.class);
 
     private final BlockingQueue<Request> requests;
     private final BlockingQueue<ResponseFuture> responses;
 
 
-    public MessageDispatcher()
+    public MessageMediator()
     {
         requests = new LinkedBlockingQueue<>();
         responses = new LinkedBlockingQueue<>();
     }
 
 
-    public void enqueue(Request request)
+    public void respond(ResponseFuture response)
+    {
+        LOG.info("Enqueuing response [{}]", response);
+        this.responses.add(response);
+    }
+
+
+    public void request(Request request)
                     throws IOException
     {
         LOG.info("Enqueuing request [{}] from channel [{}]", request.payload(), request.channel().getRemoteAddress());

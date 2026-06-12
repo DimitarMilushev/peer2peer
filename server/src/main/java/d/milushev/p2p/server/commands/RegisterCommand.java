@@ -18,8 +18,8 @@ import org.apache.logging.log4j.Logger;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 
 /**
@@ -28,21 +28,22 @@ import java.util.concurrent.CompletableFuture;
  */
 public class RegisterCommand implements Command
 {
+    public static final String NAME = "register";
+
     private static final Logger LOG = LogManager.getLogger(RegisterCommand.class);
     private static final int MIN_COMMAND_ARGUMENTS = 2;
 
     private final String input;
     private final Socket socket;
     private final InMemoryClientsRepository repository;
-    private final Queue<ResponseFuture> responses;
+    private final Consumer<ResponseFuture> onResponse;
 
-
-    public RegisterCommand(String input, Socket socket, InMemoryClientsRepository repository, Queue<ResponseFuture> responses)
+    public RegisterCommand(String input, Socket socket, InMemoryClientsRepository repository, Consumer<ResponseFuture> onResponse)
     {
         this.input = input;
         this.socket = socket;
         this.repository = repository;
-        this.responses = responses;
+        this.onResponse = onResponse;
     }
 
 
@@ -53,7 +54,7 @@ public class RegisterCommand implements Command
 
         try
         {
-            responses.add(future);
+            onResponse.accept(future);
             final User user = parseUser(input, socket.getRemoteSocketAddress().toString());
 
             final User result = register(user);
