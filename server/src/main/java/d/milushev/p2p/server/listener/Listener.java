@@ -1,15 +1,19 @@
 package main.java.d.milushev.p2p.server.listener;
 
 
+import main.java.d.milushev.p2p.server.commands.CommandProcessor;
 import main.java.d.milushev.p2p.server.exceptions.ServerException;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import main.java.d.milushev.p2p.server.exceptions.listener.ConnectionNotFoundException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -26,11 +30,12 @@ public class Listener implements Runnable, AutoCloseable
     private final Selector selector;
 
     private final ActiveConnections connections;
-    private final ExecutorService executor;
-    private final ConnectionHandler handler;
+    private final MessageMediator messageMediator;
+    private final ExecutorService commandProcessorExecutor;
 
 
-    public Listener(int port) throws ServerException
+    public Listener(int port)
+                    throws ServerException
     {
         try
         {
@@ -46,8 +51,21 @@ public class Listener implements Runnable, AutoCloseable
         isStopped = false;
 
         connections = new ActiveConnections();
-        executor = Executors.newVirtualThreadPerTaskExecutor();
-        handler = new ConnectionHandler(connections, executor);
+        messageMediator = new MessageMediator();
+        commandProcessorExecutor = Executors.newSingleThreadExecutor();
+    }
+
+
+    private void closeUser(Socket socket)
+    {
+        try
+        {
+            connections.remove(socket);
+        }
+        catch (ConnectionNotFoundException e)
+        {
+            LOG.error("Failed to close user connection: connection not found", e);
+        }
     }
 
 
@@ -71,6 +89,19 @@ public class Listener implements Runnable, AutoCloseable
             serverChannel.bind(new InetSocketAddress(port));
             serverChannel.configureBlocking(false);
             serverChannel.register(selector, SelectionKey.OP_ACCEPT);
+
+            commandProcessorExecutor.execute(new CommandProcessor(messageMediator, (socket) ->
+            {
+                try
+                {
+                    connections.remove(socket);
+                }
+                catch (ConnectionNotFoundException e)
+                {
+                    LOG.error("Failed to close user connection: connection not found", e);
+                }
+            }));
+            final ConnectionHandler handler = new ConnectionHandler(connections, messageMediator);
 
             LOG.info("Started..");
 
@@ -124,19 +155,27 @@ public class Listener implements Runnable, AutoCloseable
 
 
     @Override
-    public void close() throws ServerException
+    public void close()
+                    throws ServerException
     {
         LOG.info("Closing Listener...");
 
         isStopped = true;
-
-        executor.close();
         closeAllConnections();
         closeServerSocket();
+        try
+        {
+            Thread.currentThread().join();
+        }
+        catch (InterruptedException e)
+        {
+            LOG.debug("Listener thread interrupted during shutdown: {}", e.getMessage(), e);
+        }
     }
 
 
-    private void closeServerSocket() throws ServerException
+    private void closeServerSocket()
+                    throws ServerException
     {
         try
         {
@@ -150,7 +189,8 @@ public class Listener implements Runnable, AutoCloseable
     }
 
 
-    private void closeAllConnections() throws ServerException
+    private void closeAllConnections()
+                    throws ServerException
     {
         try
         {
