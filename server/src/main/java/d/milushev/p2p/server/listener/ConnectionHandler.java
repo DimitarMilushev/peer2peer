@@ -44,7 +44,7 @@ public class ConnectionHandler
                 final Socket socket = clientChannel.socket();
 
                 final CompletableFuture<Response> response = messageMediator.getResponseForChannel(clientChannel);
-                if (response == null || !response.isDone())
+                if (response == null)
                 {
                     return;
                 }
