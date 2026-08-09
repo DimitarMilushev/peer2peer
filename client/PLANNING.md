@@ -1,0 +1,57 @@
+# Requirements
+
+## Commands
+- register
+  - Attributes
+    - username
+    - a set of files
+  - Declares a username and a set of files that can be downloaded from this user
+  - Cases
+    - Errors
+      - Response: User already exists
+      - Response: File already exists
+      - File not on system
+    - Success
+      - Update metadata
+- unregister
+  - Attributes
+    - username
+    - a set of files
+  - Declares the user doesn't have the files anymore
+  - Cases
+    - Errors
+      - Response: Not registered user
+      - Response: File(s) not registered
+    - Success
+      - Update metadata
+- metadata
+  - Activate every 30 seconds
+  - wakeup method to update the local mapping of users and their ip:port
+  - Returns a list of user - ip:port 
+
+## Architecture
+- ConsoleInputListener
+    - Captures console inputs
+- CommandProcessor
+  - Processes commands and calls the needed services
+  - Cases
+    - register
+      - Sends a register request
+    - unregister
+      - Sends an unregister request
+    - list-files
+      - Sends a list-files request
+    - download
+      - Calls MetadataRepository to get the ip:port of the user and initiates a connection to download the file using the FileTransferService.
+- FileTransferService
+  - Handles the file transfer between clients
+  - Cases
+    - download
+      - Connects to the peer and downloads the file
+      - Saves the file to the specified path
+      - Calls register to update the metadata on the server
+- MetadataUpdater
+  - Updates the local mapping of users and their ip:port every 30 seconds
+- MetadataRepository
+  - Holds metadata of active users.
+  - Persists in a file.

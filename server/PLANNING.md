@@ -1,6 +1,6 @@
 # Requirements
 
-### Commands
+## APIs
 - register
   - Attributes
     - username
@@ -21,19 +21,16 @@
     - If the user doesn't exist, throw an error
 - list-files
   - Returns a list of user - file (ordered by user)
+- metadata
+  - Returns a list of user - ip:port 
 
-### Architecture
+## Architecture
 - UsersMetadataRepository
   - Holds mappings of users metadata
 - Listener (Registers a socket server and handles connections)
   - ConnectionHandler (Handles socket input and output through commands)
+  - MessageMediator (Mediates messages between connections)
+  - CommandProcessor (Processes commands and calls the needed services)
   - ActiveConnections (Handles the active connections)
 - ConsoleInputListener
   - Captures console inputs
-
-##### Low priority
-- EventDispatcher
-  - Handles all types of operations within it.
-
-- Processor
-  - Resolves commands and calls the needed services
