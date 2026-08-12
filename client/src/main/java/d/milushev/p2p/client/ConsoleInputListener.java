@@ -1,9 +1,11 @@
 package main.java.d.milushev.p2p.client;
 
 
+import main.java.d.milushev.p2p.client.server.ServerCommunicator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.IOException;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -21,6 +23,17 @@ public class ConsoleInputListener implements Runnable, AutoCloseable
     @Override
     public void run()
     {
+        final ServerCommunicator communicator = new ServerCommunicator("localhost", 8000);
+        try
+        {
+            communicator.start();
+        }
+        catch (IOException e)
+        {
+            LOG.error(e);
+            throw new RuntimeException(e);
+        }
+
         final var scn = new Scanner(System.in);
 
         String inputString = "";
@@ -29,6 +42,18 @@ public class ConsoleInputListener implements Runnable, AutoCloseable
             if (scn.hasNextLine())
             {
                 inputString = scn.nextLine();
+                if (inputString.isEmpty())
+                {
+                    continue;
+                }
+                try
+                {
+                    communicator.send(inputString);
+                }
+                catch (Exception e)
+                {
+                    LOG.error("Error while sending command to server: ", e);
+                }
             }
         }
 
