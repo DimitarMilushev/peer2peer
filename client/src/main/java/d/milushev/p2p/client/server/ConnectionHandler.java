@@ -11,6 +11,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -20,7 +21,7 @@ public class ConnectionHandler
     private static final int DEFAULT_BUFFER_SIZE = 1024;
 
     private final Queue<String> commandsQueue;
-    private final AtomicBoolean awaitingResponse;
+    private CompletableFuture<String> response;
 
     private final ByteBuffer writeBuffer;
     private final ByteBuffer readBuffer;
@@ -29,7 +30,7 @@ public class ConnectionHandler
     public ConnectionHandler()
     {
         commandsQueue = new LinkedList<>();
-        awaitingResponse = new AtomicBoolean(false);
+        response = null;
 
         writeBuffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
         readBuffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
@@ -63,7 +64,7 @@ public class ConnectionHandler
             SocketUtils.writeToChannel(server, writeBuffer, message);
 
             key.interestOps(SelectionKey.OP_READ);
-            awaitingResponse.set(true);
+            response = new CompletableFuture<>();
 
             LOG.debug("Successfully handled WRITE for [{}]: {}", socket.getRemoteSocketAddress(), message);
         }
@@ -80,7 +81,7 @@ public class ConnectionHandler
             final String message = SocketUtils.readFromChannel(clientChannel, readBuffer);
             LOG.info("Received: {}", message);
 
-            awaitingResponse.set(false);
+            response.complete(message);
             key.interestOps(SelectionKey.OP_WRITE);
 
             return;
@@ -118,5 +119,24 @@ public class ConnectionHandler
         }
 
         LOG.info("Successfully enqueued message: {}", message);
+    }
+
+
+    public String getResponse()
+    {
+        if (response == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            return response.get();
+        }
+        catch (Exception e)
+        {
+            LOG.error("Error getting response", e);
+            return null;
+        }
     }
 }

@@ -1,6 +1,8 @@
 package main.java.d.milushev.p2p.client;
 
 
+import main.java.d.milushev.p2p.client.metadata.MetadataUpdater;
+import main.java.d.milushev.p2p.client.repository.ActiveUsersRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -13,16 +15,19 @@ public class Main
 {
     private static final Logger LOG = LogManager.getLogger(Main.class);
 
+
     public static void main(String[] args)
     {
         LOG.info("Starting P2P Client...");
         final AtomicBoolean stopSignal = new AtomicBoolean(false);
+        final ActiveUsersRepository repository = new ActiveUsersRepository();
 
         try (final var executor = Executors.newFixedThreadPool(3);
              final var console = new ConsoleInputListener(stopSignal);
         )
         {
             executor.submit(console);
+            executor.submit(new MetadataUpdater(repository));
 
             LOG.info("Started P2P Client...");
             while (!stopSignal.get())

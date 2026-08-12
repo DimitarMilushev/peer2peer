@@ -118,7 +118,13 @@ public class ServerCommunicator
     }
 
 
-    public void send(String message)
+    /**
+     * A synchronous method to send a message to the server. The message is enqueued and will be sent when the channel is ready for writing.
+     * @param message The message to send
+     *
+     * @return The response from the server
+     */
+    public String send(String message)
     {
         try
         {
@@ -128,5 +134,12 @@ public class ServerCommunicator
         {
             LOG.error("Error when sending message: {}", message, e);
         }
+        return null;
+    }
+
+
+    public boolean isRunning()
+    {
+        return running.get();
     }
 }

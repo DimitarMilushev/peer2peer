@@ -113,6 +113,9 @@ public class CommandProcessor implements Runnable, Closeable
             case UnregisterCommand.NAME:
                 executor.execute(new UnregisterCommand(input, request.channel().socket(), repository, messageMediator::respond));
                 break;
+            case ListActiveUsersCommand.NAME:
+                executor.execute(new ListActiveUsersCommand(request.channel().socket(), repository, messageMediator::respond));
+                break;
             default:
                 throw new UnsupportedInputException(input);
         }
