@@ -56,9 +56,10 @@ public class CommandProcessor implements Runnable, Closeable
             {
                 request = messageMediator.poll();
             }
-            catch (InterruptedException | IOException e)
+            catch (InterruptedException e)
             {
                 LOG.error("Error while polling for messages: ", e);
+                Thread.currentThread().interrupt();
                 continue;
             }
 

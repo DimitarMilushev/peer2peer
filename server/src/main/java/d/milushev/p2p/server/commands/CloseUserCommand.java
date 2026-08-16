@@ -1,11 +1,16 @@
 package main.java.d.milushev.p2p.server.commands;
 
 
+import main.java.d.milushev.p2p.server.exceptions.repository.EntityNotFoundException;
 import main.java.d.milushev.p2p.server.repositories.InMemoryClientsRepository;
 
 import java.net.Socket;
+import java.net.SocketAddress;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 
+import main.java.d.milushev.p2p.server.repositories.models.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,15 +39,27 @@ public class CloseUserCommand implements Command
     {
         try
         {
-            socket.close();
             onCloseUser.accept(socket);
-            final var removed = repository.removeByAddress(socket.getRemoteSocketAddress().toString());
-
+            final List<User> removed = removeUsersByAddress(socket.getRemoteSocketAddress());
             LOG.info("Closed users [{}]", removed);
         }
         catch (Exception e)
         {
             LOG.error("Error during UnregisterUserCommand command: {}", e.getMessage(), e);
+        }
+    }
+
+
+    private List<User> removeUsersByAddress(SocketAddress address)
+    {
+        try
+        {
+            return repository.removeByAddress(address.toString());
+        }
+        catch (EntityNotFoundException e)
+        {
+            LOG.debug("Failed to find any users by IP {}: {}", address, e.getMessage());
+            return Collections.emptyList();
         }
     }
 }
