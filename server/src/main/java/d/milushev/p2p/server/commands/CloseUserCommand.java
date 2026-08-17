@@ -41,7 +41,7 @@ public class CloseUserCommand implements Command
         {
             onCloseUser.accept(socket);
             final List<User> removed = removeUsersByAddress(socket.getRemoteSocketAddress());
-            LOG.info("Closed users [{}]", removed);
+            LOG.info("Closed users {}", removed);
         }
         catch (Exception e)
         {

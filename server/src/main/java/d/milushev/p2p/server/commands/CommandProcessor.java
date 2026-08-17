@@ -90,7 +90,7 @@ public class CommandProcessor implements Runnable, Closeable
     private void process(Request request)
                     throws Exception
     {
-        LOG.debug("Processing request [{}] from channel [{}]", request.payload(), request.channel().getRemoteAddress());
+        LOG.debug("Processing request [{}]", request.payload());
 
         final String input = request.payload().toString();
         if (input.isBlank())
