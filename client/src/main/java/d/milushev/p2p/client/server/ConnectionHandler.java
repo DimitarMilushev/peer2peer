@@ -2,6 +2,8 @@ package main.java.d.milushev.p2p.client.server;
 
 
 import d.milushev.p2p.network_utils.SocketUtils;
+import main.java.d.milushev.p2p.client.filetransfer.FileTransferService;
+import main.java.d.milushev.p2p.client.repository.ActiveUsersRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -9,10 +11,11 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class ConnectionHandler
@@ -26,10 +29,19 @@ public class ConnectionHandler
     private final ByteBuffer writeBuffer;
     private final ByteBuffer readBuffer;
 
+    private final FileTransferService fileTransferService;
+    private final Set<SocketChannel> clientChannels;
 
-    public ConnectionHandler()
+    private final ActiveUsersRepository repository;
+
+
+    public ConnectionHandler(ActiveUsersRepository repository)
     {
         commandsQueue = new LinkedList<>();
+        fileTransferService = new FileTransferService();
+        clientChannels = new HashSet<>();
+        this.repository = repository;
+
         response = null;
 
         writeBuffer = ByteBuffer.allocate(DEFAULT_BUFFER_SIZE);
@@ -55,6 +67,12 @@ public class ConnectionHandler
             return;
         }
 
+        if (message.startsWith("download"))
+        {
+            processDownloadCommand(message);
+            return;
+        }
+
         if (key.channel() instanceof SocketChannel server)
         {
             final Socket socket = server.socket();
@@ -71,6 +89,32 @@ public class ConnectionHandler
     }
 
 
+    private void processDownloadCommand(String message)
+    {
+        final String[] parts = message.split(" ");
+        if (parts.length != 4)
+        {
+            LOG.error("Invalid download command format. Expected: download <username> <file_path> <destination_path>");
+            return;
+        }
+
+        final String username = parts[1];
+        final String filePath = parts[2];
+        final String destinationPath = parts[3];
+
+        final var user = repository.getByUsername(username);
+        if (user == null)
+        {
+            LOG.error("User not found in repository: {}", username);
+            return;
+        }
+
+        LOG.info("Initiating file download from server: {} to local path: {}", filePath, destinationPath);
+        fileTransferService.receiveFile(destinationPath, user);
+        LOG.info("File download completed from server: {} to local path: {}", filePath, destinationPath);
+    }
+
+
     public void handleRead(SelectionKey key)
                     throws Exception
     {
@@ -80,6 +124,12 @@ public class ConnectionHandler
         {
             final String message = SocketUtils.readFromChannel(clientChannel, readBuffer);
             LOG.info("Received: {}", message);
+
+            if (clientChannels.contains(clientChannel))
+            {
+                fileTransferService.sendFile(key.selector());
+                clientChannels.remove(clientChannel);
+            }
 
             response.complete(message);
             key.interestOps(SelectionKey.OP_WRITE);
@@ -137,6 +187,35 @@ public class ConnectionHandler
         {
             LOG.error("Error getting response", e);
             return null;
+        }
+    }
+
+
+    public void handleAccept(SelectionKey key)
+    {
+        if (key.channel() instanceof SocketChannel clientChannel)
+        {
+            LOG.info("Handling ACCEPT for channel: {}", clientChannel);
+            try
+            {
+                while (!clientChannel.finishConnect())
+                {
+                    LOG.info("Accepting connection...");
+                }
+
+                this.clientChannels.add(clientChannel);
+
+                LOG.info("Accepted connection from: {}", clientChannel.getRemoteAddress());
+                key.interestOps(SelectionKey.OP_WRITE);
+            }
+            catch (Exception e)
+            {
+                LOG.error("Error while handling ACCEPT for channel: {}", clientChannel, e);
+            }
+        }
+        else
+        {
+            LOG.error("Invalid channel was opened for ACCEPT operation");
         }
     }
 }

@@ -11,20 +11,20 @@ import java.util.Set;
 
 public class ActiveUsersRepository
 {
-    final Map<String, Set<String>> addressByUsername;
+    final Map<String, Set<String>> usernamesByAddress;
 
 
     public ActiveUsersRepository()
     {
-        addressByUsername = new HashMap<>();
+        usernamesByAddress = new HashMap<>();
     }
 
 
     public void add(User user)
     {
-        final Set<String> usernamesByAddress = addressByUsername.computeIfAbsent(user.address(), k -> new java.util.HashSet<>());
+        final Set<String> usernames = this.usernamesByAddress.computeIfAbsent(user.address(), k -> new java.util.HashSet<>());
 
-        usernamesByAddress.add(user.username());
+        usernames.add(user.username());
     }
 
 
@@ -34,5 +34,18 @@ public class ActiveUsersRepository
         {
             add(user);
         }
+    }
+
+    public User getByUsername(String username)
+    {
+        for (Map.Entry<String, Set<String>> entry : usernamesByAddress.entrySet())
+        {
+            if (entry.getValue().contains(username))
+            {
+                return new User(username, entry.getKey());
+            }
+        }
+
+        return null;
     }
 }

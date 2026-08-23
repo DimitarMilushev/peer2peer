@@ -10,6 +10,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import main.java.d.milushev.p2p.client.repository.ActiveUsersRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -28,12 +29,13 @@ public class ServerCommunicator
     private final ConnectionHandler connectionHandler;
 
 
-    public ServerCommunicator(String host, int port)
+
+    public ServerCommunicator(String host, int port, ActiveUsersRepository repository)
     {
         this.targetAddress = new InetSocketAddress(host, port);
         this.running = new AtomicBoolean(false);
         this.executor = Executors.newSingleThreadExecutor();
-        this.connectionHandler = new ConnectionHandler();
+        this.connectionHandler = new ConnectionHandler(repository);
     }
 
 
@@ -51,7 +53,7 @@ public class ServerCommunicator
         {
             clientChannel.configureBlocking(false);
             clientChannel.connect(targetAddress);
-            clientChannel.register(selector, SelectionKey.OP_CONNECT);
+            clientChannel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_ACCEPT);
 
             running.set(true);
             LOG.info("Client started. Type messages to send:");
@@ -81,16 +83,9 @@ public class ServerCommunicator
     {
         while (running.get())
         {
-            try
+            if (selector.select(1000) == 0)
             {
-                if (selector.select(1000) == 0)
-                {
-                    continue;
-                }
-            }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
+                continue;
             }
 
             for (var key : selector.selectedKeys())
@@ -107,6 +102,10 @@ public class ServerCommunicator
                 {
                     connectionHandler.handleConnect(key);
                 }
+                else if (key.isAcceptable())
+                {
+                    connectionHandler.handleAccept(key);
+                }
                 else
                 {
                     LOG.warn("Unknown key state: {}", key);
@@ -119,9 +118,10 @@ public class ServerCommunicator
 
 
     /**
-     * A synchronous method to send a message to the server. The message is enqueued and will be sent when the channel is ready for writing.
-     * @param message The message to send
+     * A synchronous method to send a message to the server. The message is enqueued and will be sent when the channel is ready for
+     * writing.
      *
+     * @param message The message to send
      * @return The response from the server
      */
     public String send(String message)

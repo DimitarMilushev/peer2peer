@@ -1,6 +1,7 @@
 package main.java.d.milushev.p2p.client;
 
 
+import main.java.d.milushev.p2p.client.repository.ActiveUsersRepository;
 import main.java.d.milushev.p2p.client.server.ServerCommunicator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -14,16 +15,18 @@ public class ConsoleInputListener implements Runnable, AutoCloseable
 {
     private static final Logger LOG = LogManager.getLogger(ConsoleInputListener.class);
     private AtomicBoolean isStopped;
+    private ActiveUsersRepository repository;
 
-    public ConsoleInputListener(AtomicBoolean stopSignal)
+    public ConsoleInputListener(AtomicBoolean stopSignal, ActiveUsersRepository repository)
     {
         this.isStopped = stopSignal;
+        this.repository = repository;
     }
 
     @Override
     public void run()
     {
-        final ServerCommunicator communicator = new ServerCommunicator("localhost", 8000);
+        final ServerCommunicator communicator = new ServerCommunicator("localhost", 8000, repository);
         try
         {
             communicator.start();

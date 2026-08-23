@@ -29,7 +29,7 @@ public class MetadataUpdater implements Runnable
 
     public MetadataUpdater(ActiveUsersRepository repository)
     {
-        serverCommunicator = new ServerCommunicator("localhost", 8000);
+        serverCommunicator = new ServerCommunicator("localhost", 8000, repository);
         isRunning = new AtomicBoolean(false);
         this.repository = repository;
     }

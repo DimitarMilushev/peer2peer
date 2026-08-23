@@ -23,7 +23,7 @@ public class Main
         final ActiveUsersRepository repository = new ActiveUsersRepository();
 
         try (final var executor = Executors.newFixedThreadPool(3);
-             final var console = new ConsoleInputListener(stopSignal);
+             final var console = new ConsoleInputListener(stopSignal, repository);
         )
         {
             executor.submit(console);
