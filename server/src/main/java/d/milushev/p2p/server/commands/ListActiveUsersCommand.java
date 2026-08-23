@@ -15,8 +15,6 @@ import java.util.function.Consumer;
 
 public class ListActiveUsersCommand implements Command
 {
-    private static final String USER_SEPARATOR = ";";
-
     public static final String NAME = "list-active-users";
 
     private final Socket socket;
@@ -38,11 +36,17 @@ public class ListActiveUsersCommand implements Command
         onResponse.accept(future);
 
         final User[] users = repository.getAllUsers();
+        if (users.length == 0)
+        {
+            future.response().complete(ResponseFactory.createSuccess("[]", socket.getChannel()));
+            return;
+        }
+
         final String[] userInfos = Arrays.stream(users).map(this::getUserInfo).toArray(String[]::new);
 
         final String result = String.join(";", userInfos);
 
-        future.response().complete(ResponseFactory.createSuccess(result, socket.getChannel()));
+         future.response().complete(ResponseFactory.createSuccess(result, socket.getChannel()));
     }
 
 

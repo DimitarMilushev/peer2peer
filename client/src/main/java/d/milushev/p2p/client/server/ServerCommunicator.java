@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -32,7 +33,7 @@ public class ServerCommunicator
     {
         this.targetAddress = new InetSocketAddress(host, port);
         this.running = new AtomicBoolean(false);
-        this.executor = Executors.newSingleThreadExecutor();
+        this.executor = Executors.newVirtualThreadPerTaskExecutor();
         this.connectionHandler = new ConnectionHandler(repository);
     }
 
@@ -118,7 +119,7 @@ public class ServerCommunicator
      * @param message The message to send
      * @return The response from the server
      */
-    public String send(String message)
+    public void send(String message)
     {
         try
         {
@@ -128,7 +129,28 @@ public class ServerCommunicator
         {
             LOG.error("Error when sending message: {}", message, e);
         }
-        return null;
+    }
+
+    public String sendSync(String message)
+    {
+        send(message);
+
+        try
+        {
+            int tries = 0;
+            while (connectionHandler.getResponse() == null && tries < 3)
+            {
+                Thread.sleep(500);
+                ++tries;
+            }
+
+            return connectionHandler.getResponse().get();
+        }
+        catch (Exception e)
+        {
+            LOG.error("Failed to get response", e);
+            return null;
+        }
     }
 
 

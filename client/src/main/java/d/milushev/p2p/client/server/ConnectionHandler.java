@@ -151,7 +151,7 @@ public class ConnectionHandler
     }
 
 
-    public String getResponse()
+    public CompletableFuture<String> getResponse()
     {
         if (response == null)
         {
@@ -160,7 +160,7 @@ public class ConnectionHandler
 
         try
         {
-            return response.get();
+            return response;
         }
         catch (Exception e)
         {

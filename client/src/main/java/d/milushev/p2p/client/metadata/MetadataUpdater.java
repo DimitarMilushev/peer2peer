@@ -17,7 +17,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class MetadataUpdater implements Runnable
 {
-    private static final int DEFAULT_UPDATE_TIMEOUT_S = 30;
+    private static final int DEFAULT_UPDATE_TIMEOUT_S = 5;
     private static final String METADATA_COMMAND = "list-active-users";
 
     private static final Logger LOG = LogManager.getLogger(MetadataUpdater.class);
@@ -29,7 +29,7 @@ public class MetadataUpdater implements Runnable
 
     public MetadataUpdater(ActiveUsersRepository repository)
     {
-        serverCommunicator = new ServerCommunicator("p2p-server", 8000, repository);
+        serverCommunicator = new ServerCommunicator("localhost", 8000, repository);
         isRunning = new AtomicBoolean(false);
         this.repository = repository;
     }
@@ -80,10 +80,10 @@ public class MetadataUpdater implements Runnable
 
         try
         {
-            final String response = serverCommunicator.send(METADATA_COMMAND);
+            final String response = serverCommunicator.sendSync(METADATA_COMMAND);
             LOG.info("Received metadata from server: {}", response);
 
-            if (response == null || response.isBlank())
+            if (response == null || response.isBlank() || response.equals("[]"))
             {
                 return;
             }

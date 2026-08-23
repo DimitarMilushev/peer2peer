@@ -29,7 +29,7 @@ public class ConsoleInputListener implements Runnable, AutoCloseable
     {
         this.isStopped = stopSignal;
         this.repository = repository;
-        this.communicator = new ServerCommunicator("p2p-server", 8000, repository);
+        this.communicator = new ServerCommunicator("localhost", 8000, repository);
     }
 
 
