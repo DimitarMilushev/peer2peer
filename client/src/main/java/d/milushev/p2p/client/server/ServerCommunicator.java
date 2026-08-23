@@ -165,7 +165,8 @@ public class ServerCommunicator
         try
         {
             final DownloadHandler handler = new DownloadHandler();
-            final var parsedAddress = new InetSocketAddress(address, 8021);
+            //TODO: fix slash issue
+            final var parsedAddress = new InetSocketAddress(address.substring(1), 8021);
 
             handler.connect(parsedAddress);
             handler.download(file, downloadDirectory);

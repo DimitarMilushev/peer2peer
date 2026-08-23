@@ -115,7 +115,7 @@ public class FileServer implements Runnable, AutoCloseable
         {
             outputStream.write(buffer, 0, bytesRead);
             totalRead += bytesRead;
-            LOG.info("{}% sent", ((double)totalRead / fileSize) * 100);
+            LOG.info("{}% sent", Math.round(((double)totalRead / fileSize) * 100));
 
             bytesRead = fileInputStream.read(buffer);
         }

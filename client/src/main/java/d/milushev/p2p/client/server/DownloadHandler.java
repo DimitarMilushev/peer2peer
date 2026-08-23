@@ -1,7 +1,6 @@
 package main.java.d.milushev.p2p.client.server;
 
 
-import main.java.d.milushev.p2p.client.filetransfer.v1.FileServerUtil;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -10,7 +9,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -28,7 +26,7 @@ public class DownloadHandler
     {
         LOG.info("Connecting to server {}", address);
 
-        if (socket.isConnected())
+        if (socket != null && socket.isConnected())
         {
             LOG.info("Already connected to server {}", address);
             return;
@@ -108,7 +106,7 @@ public class DownloadHandler
         try
         {
             long fileSize = initialFileRequest(command);
-            final Path newFilePath = FileServerUtil.getDownloadsDirectory().resolve(fileName);
+            final Path newFilePath = Path.of(destination).resolve(fileName);
             if (Files.exists(newFilePath))
             {
                 throw new Exception("File already exists in downloads directory: " + newFilePath);
@@ -149,7 +147,7 @@ public class DownloadHandler
             {
                 fileOutputStream.write(buffer, 0, bytesRead);
                 totalRead += bytesRead;
-                LOG.info("{}% complete", ((double)totalRead / fileSize) * 100);
+                LOG.info("{}% complete", Math.round(((double)totalRead / fileSize) * 100));
 
                 bytesRead = inputStream.read(buffer);
             }
