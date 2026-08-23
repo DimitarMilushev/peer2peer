@@ -26,7 +26,6 @@ public class ServerCommunicator
 
     private final ExecutorService executor;
     private final ConnectionHandler connectionHandler;
-    private SocketChannel channel;
 
 
     public ServerCommunicator(String host, int port, ActiveUsersRepository repository)
@@ -53,8 +52,6 @@ public class ServerCommunicator
             clientChannel.configureBlocking(false);
             clientChannel.connect(targetAddress);
             clientChannel.register(selector, clientChannel.validOps());
-
-            this.channel = clientChannel;
 
             running.set(true);
             LOG.info("Client started. Type messages to send:");
@@ -143,21 +140,17 @@ public class ServerCommunicator
 
     public void download(String address, String file, String downloadDirectory)
     {
-        if (channel == null || !channel.isConnected())
-        {
-            LOG.warn("Channel is not open. Skipping download command...");
-            return;
-        }
-
-        final var parsedAddress = new InetSocketAddress(address, 8021);
         try
         {
-            channel.connect(parsedAddress);
+            final DownloadHandler handler = new DownloadHandler();
+            final var parsedAddress = new InetSocketAddress(address, 8021);
 
+            handler.connect(parsedAddress);
+            handler.download(file, downloadDirectory);
         }
-        catch (IOException e)
+        catch (Exception e)
         {
-            LOG.error("Error when download file {} from address {}", file, address);
+            LOG.error("Failed to handle download", e);
         }
     }
 }

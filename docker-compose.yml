@@ -15,6 +15,25 @@ services:
       context: client
       dockerfile: Dockerfile
     container_name: p2p-client-1
+    ports:
+      - "5005:5005"
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+    depends_on:
+      - central-server
+    networks:
+      - p2p-network
+
+  client-2:
+    build:
+      context: client
+      dockerfile: Dockerfile
+    container_name: p2p-client-2
+    ports:
+      - "5006:5005"
+    environment:
+      - JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005
+
     depends_on:
       - central-server
     networks:

@@ -29,7 +29,7 @@ public class MetadataUpdater implements Runnable
 
     public MetadataUpdater(ActiveUsersRepository repository)
     {
-        serverCommunicator = new ServerCommunicator("localhost", 8000, repository);
+        serverCommunicator = new ServerCommunicator("p2p-server", 8000, repository);
         isRunning = new AtomicBoolean(false);
         this.repository = repository;
     }
@@ -81,17 +81,22 @@ public class MetadataUpdater implements Runnable
         try
         {
             final String response = serverCommunicator.send(METADATA_COMMAND);
+            LOG.info("Received metadata from server: {}", response);
+
+            if (response == null || response.isBlank())
+            {
+                return;
+            }
 
             final var users = MetadataParser.parseUsers(response);
-            if (!users.isEmpty())
+            LOG.info("Parsed users {}", users);
+
+            if (users.isEmpty())
             {
-                repository.addAll(users);
+                return;
             }
 
-            if (response != null && !response.isBlank())
-            {
-                LOG.info("Received metadata from server: {}", response);
-            }
+            repository.addAll(users);
         }
         catch (Exception e)
         {

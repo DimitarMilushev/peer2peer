@@ -18,11 +18,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ConsoleInputListener implements Runnable, AutoCloseable
 {
     private static final Logger LOG = LogManager.getLogger(ConsoleInputListener.class);
-    private AtomicBoolean isStopped;
-    private ActiveUsersRepository repository;
+    private final AtomicBoolean isStopped;
+    private final ActiveUsersRepository repository;
     private final ServerCommunicator communicator;
 
-    //TODO: REMOVE
     private final RegisteredFilesRepository filesRepository = new RegisteredFilesRepository();
 
 
@@ -30,7 +29,7 @@ public class ConsoleInputListener implements Runnable, AutoCloseable
     {
         this.isStopped = stopSignal;
         this.repository = repository;
-        this.communicator = new ServerCommunicator("localhost", 8000, repository);
+        this.communicator = new ServerCommunicator("p2p-server", 8000, repository);
     }
 
 
@@ -99,10 +98,10 @@ public class ConsoleInputListener implements Runnable, AutoCloseable
         }
 
         final String host = user.address().split(":")[0];
-
-        // Parse address with 8021
+        final String file = parts[2];
+        final String destination = parts[3];
         // call download with new address, filename and downloadFolderPath
-
+        communicator.download(host, file, destination);
     }
 
 

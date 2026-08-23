@@ -2,7 +2,6 @@ package main.java.d.milushev.p2p.client.server;
 
 
 import d.milushev.p2p.network_utils.SocketUtils;
-import main.java.d.milushev.p2p.client.filetransfer.demo.FileTransferService;
 import main.java.d.milushev.p2p.client.repository.ActiveUsersRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
