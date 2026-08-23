@@ -1,4 +1,7 @@
-FROM ubuntu:latest
-LABEL authors="d.milushev"
+FROM eclipse-temurin:21-jre-alpine
 
-ENTRYPOINT ["top", "-b"]
+WORKDIR /app
+
+COPY build/libs/client-1.0-SNAPSHOT.jar client.jar
+
+ENTRYPOINT ["java", "-jar", "client.jar"]

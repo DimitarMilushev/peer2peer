@@ -2,7 +2,7 @@ package main.java.d.milushev.p2p.client.server;
 
 
 import d.milushev.p2p.network_utils.SocketUtils;
-import main.java.d.milushev.p2p.client.filetransfer.FileTransferService;
+import main.java.d.milushev.p2p.client.filetransfer.demo.FileTransferService;
 import main.java.d.milushev.p2p.client.repository.ActiveUsersRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -11,10 +11,8 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 
@@ -29,17 +27,12 @@ public class ConnectionHandler
     private final ByteBuffer writeBuffer;
     private final ByteBuffer readBuffer;
 
-    private final FileTransferService fileTransferService;
-    private final Set<SocketChannel> clientChannels;
-
     private final ActiveUsersRepository repository;
 
 
     public ConnectionHandler(ActiveUsersRepository repository)
     {
         commandsQueue = new LinkedList<>();
-        fileTransferService = new FileTransferService();
-        clientChannels = new HashSet<>();
         this.repository = repository;
 
         response = null;
@@ -64,12 +57,6 @@ public class ConnectionHandler
         if (message == null || message.isBlank())
         {
             LOG.warn("Empty command. Ignoring...");
-            return;
-        }
-
-        if (message.startsWith("download"))
-        {
-            processDownloadCommand(message);
             return;
         }
 
@@ -110,7 +97,6 @@ public class ConnectionHandler
         }
 
         LOG.info("Initiating file download from server: {} to local path: {}", filePath, destinationPath);
-        fileTransferService.receiveFile(destinationPath, user);
         LOG.info("File download completed from server: {} to local path: {}", filePath, destinationPath);
     }
 
@@ -124,12 +110,6 @@ public class ConnectionHandler
         {
             final String message = SocketUtils.readFromChannel(clientChannel, readBuffer);
             LOG.info("Received: {}", message);
-
-            if (clientChannels.contains(clientChannel))
-            {
-                fileTransferService.sendFile(key.selector());
-                clientChannels.remove(clientChannel);
-            }
 
             response.complete(message);
             key.interestOps(SelectionKey.OP_WRITE);
@@ -187,35 +167,6 @@ public class ConnectionHandler
         {
             LOG.error("Error getting response", e);
             return null;
-        }
-    }
-
-
-    public void handleAccept(SelectionKey key)
-    {
-        if (key.channel() instanceof SocketChannel clientChannel)
-        {
-            LOG.info("Handling ACCEPT for channel: {}", clientChannel);
-            try
-            {
-                while (!clientChannel.finishConnect())
-                {
-                    LOG.info("Accepting connection...");
-                }
-
-                this.clientChannels.add(clientChannel);
-
-                LOG.info("Accepted connection from: {}", clientChannel.getRemoteAddress());
-                key.interestOps(SelectionKey.OP_WRITE);
-            }
-            catch (Exception e)
-            {
-                LOG.error("Error while handling ACCEPT for channel: {}", clientChannel, e);
-            }
-        }
-        else
-        {
-            LOG.error("Invalid channel was opened for ACCEPT operation");
         }
     }
 }

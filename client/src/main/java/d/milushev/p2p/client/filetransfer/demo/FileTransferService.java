@@ -1,4 +1,4 @@
-package main.java.d.milushev.p2p.client.filetransfer;
+package main.java.d.milushev.p2p.client.filetransfer.demo;
 
 
 import main.java.d.milushev.p2p.client.repository.models.User;

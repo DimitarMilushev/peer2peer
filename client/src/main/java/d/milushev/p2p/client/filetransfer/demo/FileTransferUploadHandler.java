@@ -1,4 +1,4 @@
-package main.java.d.milushev.p2p.client.filetransfer;
+package main.java.d.milushev.p2p.client.filetransfer.demo;
 
 
 import d.milushev.p2p.network_utils.BufferUtils;

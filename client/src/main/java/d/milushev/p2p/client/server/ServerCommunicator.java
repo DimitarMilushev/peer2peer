@@ -3,7 +3,6 @@ package main.java.d.milushev.p2p.client.server;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.ExecutorService;
@@ -27,7 +26,7 @@ public class ServerCommunicator
 
     private final ExecutorService executor;
     private final ConnectionHandler connectionHandler;
-
+    private SocketChannel channel;
 
 
     public ServerCommunicator(String host, int port, ActiveUsersRepository repository)
@@ -53,7 +52,9 @@ public class ServerCommunicator
         {
             clientChannel.configureBlocking(false);
             clientChannel.connect(targetAddress);
-            clientChannel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_ACCEPT);
+            clientChannel.register(selector, clientChannel.validOps());
+
+            this.channel = clientChannel;
 
             running.set(true);
             LOG.info("Client started. Type messages to send:");
@@ -102,10 +103,6 @@ public class ServerCommunicator
                 {
                     connectionHandler.handleConnect(key);
                 }
-                else if (key.isAcceptable())
-                {
-                    connectionHandler.handleAccept(key);
-                }
                 else
                 {
                     LOG.warn("Unknown key state: {}", key);
@@ -141,5 +138,26 @@ public class ServerCommunicator
     public boolean isRunning()
     {
         return running.get();
+    }
+
+
+    public void download(String address, String file, String downloadDirectory)
+    {
+        if (channel == null || !channel.isConnected())
+        {
+            LOG.warn("Channel is not open. Skipping download command...");
+            return;
+        }
+
+        final var parsedAddress = new InetSocketAddress(address, 8021);
+        try
+        {
+            channel.connect(parsedAddress);
+
+        }
+        catch (IOException e)
+        {
+            LOG.error("Error when download file {} from address {}", file, address);
+        }
     }
 }

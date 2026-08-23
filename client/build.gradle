@@ -1,5 +1,11 @@
 plugins {
     id 'java'
+    id 'application'
+}
+
+
+application {
+    mainClass = 'main.java.d.milushev.p2p.client.Main'
 }
 
 group = 'd.milushev.p2p.client'
@@ -29,4 +35,22 @@ sourceSets {
             srcDirs = ['src'] // Adjust this to your existing source directory
         }
     }
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'main.java.d.milushev.p2p.client.Main'
+        )
+    }
+
+    // Ensure all subprojects and dependencies are built first
+    dependsOn configurations.runtimeClasspath
+
+    from {
+        configurations.runtimeClasspath.collect {
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }

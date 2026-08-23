@@ -2,12 +2,16 @@ package main.java.d.milushev.p2p.client;
 
 
 import main.java.d.milushev.p2p.client.repository.ActiveUsersRepository;
+import main.java.d.milushev.p2p.client.repository.RegisteredFilesRepository;
+import main.java.d.milushev.p2p.client.repository.models.User;
 import main.java.d.milushev.p2p.client.server.ServerCommunicator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 
@@ -16,17 +20,23 @@ public class ConsoleInputListener implements Runnable, AutoCloseable
     private static final Logger LOG = LogManager.getLogger(ConsoleInputListener.class);
     private AtomicBoolean isStopped;
     private ActiveUsersRepository repository;
+    private final ServerCommunicator communicator;
+
+    //TODO: REMOVE
+    private final RegisteredFilesRepository filesRepository = new RegisteredFilesRepository();
+
 
     public ConsoleInputListener(AtomicBoolean stopSignal, ActiveUsersRepository repository)
     {
         this.isStopped = stopSignal;
         this.repository = repository;
+        this.communicator = new ServerCommunicator("localhost", 8000, repository);
     }
+
 
     @Override
     public void run()
     {
-        final ServerCommunicator communicator = new ServerCommunicator("localhost", 8000, repository);
         try
         {
             communicator.start();
@@ -49,9 +59,16 @@ public class ConsoleInputListener implements Runnable, AutoCloseable
                 {
                     continue;
                 }
+                final String command = inputString.split(" ")[0];
                 try
                 {
-                    communicator.send(inputString);
+                    switch (command)
+                    {
+                        case "register" -> handleRegisterCommand(inputString);
+                        case "unregister" -> handleUnregisterCommand(inputString);
+                        case "download" -> handleDownloadCommand(inputString);
+                        default -> communicator.send(inputString);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -61,6 +78,104 @@ public class ConsoleInputListener implements Runnable, AutoCloseable
         }
 
         this.isStopped.set(true);
+    }
+
+
+    private void handleDownloadCommand(String inputString)
+    {
+        final String[] parts = inputString.split(" ");
+        if (parts.length != 4)
+        {
+            LOG.info("Malformed download command {}", inputString);
+            return;
+        }
+        // Find user in repo
+        final String username = parts[1];
+        final User user = repository.getByUsername(username);
+        if (user == null)
+        {
+            LOG.info("User {} is not found", username);
+            return;
+        }
+
+        final String host = user.address().split(":")[0];
+
+        // Parse address with 8021
+        // call download with new address, filename and downloadFolderPath
+
+    }
+
+
+    private void handleUnregisterCommand(String inputString)
+    {
+        final String[] parts = inputString.split(" ");
+        if (parts.length < 3)
+        {
+            LOG.info("Malformed unregister command {}", inputString);
+            return;
+        }
+
+        final Set<String> unregisteredFiles = new HashSet<>(parts.length - 2);
+        for (int i = 2; i < parts.length; i++)
+        {
+            final String fileName = parts[i];
+
+            if (!filesRepository.hasFile(fileName))
+            {
+                LOG.info("File {} was not found.", fileName);
+                continue;
+            }
+
+            filesRepository.removeFile(fileName);
+            unregisteredFiles.add(fileName);
+            LOG.info("Unregistered file {}", fileName);
+        }
+
+        if (unregisteredFiles.isEmpty())
+        {
+            LOG.info("Nothing to unregister...");
+            return;
+        }
+
+        final String username = parts[1];
+        communicator.send("unregister " + username + " " + String.join(" ", unregisteredFiles));
+    }
+
+
+    private void handleRegisterCommand(String inputString)
+    {
+        final String[] parts = inputString.split(" ");
+        if (parts.length < 3)
+        {
+            LOG.info("Malformed register command {}", inputString);
+            return;
+        }
+
+        final Set<String> registeredFiles = new HashSet<>(parts.length - 2);
+        for (int i = 2; i < parts.length; i++)
+        {
+            final String filePath = parts[i];
+            final String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
+
+            if (filesRepository.hasFile(fileName))
+            {
+                LOG.info("File {} is already registered", fileName);
+                continue;
+            }
+
+            filesRepository.addFile(fileName, filePath);
+            registeredFiles.add(fileName);
+            LOG.info("Registered {}", filePath);
+        }
+
+        if (registeredFiles.isEmpty())
+        {
+            LOG.info("Nothing to register...");
+            return;
+        }
+
+        final String username = parts[1];
+        communicator.send("register " + username + " " + String.join(" ", registeredFiles));
     }
 
 

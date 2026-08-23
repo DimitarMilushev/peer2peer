@@ -1,0 +1,25 @@
+services:
+  central-server:
+    build:
+      context: server
+      dockerfile: Dockerfile
+    container_name: p2p-server
+    hostname: p2p-server
+    ports:
+      - "8000:8000"
+    networks:
+      - p2p-network
+
+  client-1:
+    build:
+      context: client
+      dockerfile: Dockerfile
+    container_name: p2p-client-1
+    depends_on:
+      - central-server
+    networks:
+      - p2p-network
+
+networks:
+  p2p-network:
+    driver: bridge
