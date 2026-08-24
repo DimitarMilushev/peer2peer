@@ -55,7 +55,9 @@ public class RegisterCommand implements Command
         try
         {
             onResponse.accept(future);
-            final User user = parseUser(input, socket.getRemoteSocketAddress().toString());
+            // Remove the leading slash "/"
+            final String address = socket.getRemoteSocketAddress().toString().substring(1);
+            final User user = parseUser(input, address);
 
             final User result = register(user);
             future.response().complete(ResponseFactory.createSuccess(result, socket.getChannel()));

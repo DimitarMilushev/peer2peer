@@ -9,6 +9,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
@@ -18,17 +20,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ConsoleInputListener implements Runnable, AutoCloseable
 {
     private static final Logger LOG = LogManager.getLogger(ConsoleInputListener.class);
+
     private final AtomicBoolean isStopped;
     private final ActiveUsersRepository repository;
     private final ServerCommunicator communicator;
+    private final RegisteredFilesRepository filesRepository;
 
-    private final RegisteredFilesRepository filesRepository = new RegisteredFilesRepository();
-
-
-    public ConsoleInputListener(AtomicBoolean stopSignal, ActiveUsersRepository repository)
+    public ConsoleInputListener(AtomicBoolean stopSignal, ActiveUsersRepository repository, RegisteredFilesRepository filesRepository)
     {
         this.isStopped = stopSignal;
         this.repository = repository;
+        this.filesRepository = filesRepository;
         this.communicator = new ServerCommunicator("localhost", 8000, repository);
     }
 
@@ -150,20 +152,24 @@ public class ConsoleInputListener implements Runnable, AutoCloseable
             return;
         }
 
-        final Set<String> registeredFiles = new HashSet<>(parts.length - 2);
+        final Set<String> registeredFiles = HashSet.newHashSet(parts.length - 2);
         for (int i = 2; i < parts.length; i++)
         {
-            final String filePath = parts[i];
-            final String fileName = filePath.substring(filePath.lastIndexOf("/") + 1);
-
-            if (filesRepository.hasFile(fileName))
+            final Path filePath = Path.of(parts[i]);
+            if (!Files.exists(filePath))
             {
-                LOG.info("File {} is already registered", fileName);
+                LOG.info("File [{}] does not exist", filePath);
+                return;
+            }
+
+            if (filesRepository.hasFile(filePath.getFileName().toString()))
+            {
+                LOG.info("File [{}] is already registered", filePath);
                 continue;
             }
 
-            filesRepository.addFile(fileName, filePath);
-            registeredFiles.add(fileName);
+            filesRepository.addFile(filePath.getFileName().toString(), filePath.toString());
+            registeredFiles.add(filePath.getFileName().toString());
             LOG.info("Registered {}", filePath);
         }
 

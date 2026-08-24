@@ -22,7 +22,7 @@ public class DownloadHandler
     private InputStream inputStream;
 
 
-    public void connect(InetSocketAddress address)
+    private void connect(InetSocketAddress address)
     {
         LOG.info("Connecting to server {}", address);
 
@@ -46,7 +46,7 @@ public class DownloadHandler
     }
 
 
-    public void disconnect()
+    private void disconnect()
     {
         try
         {
@@ -64,7 +64,7 @@ public class DownloadHandler
     }
 
 
-    public void send(String message)
+    private void send(String message)
                     throws IOException
     {
         if (socket == null || socket.isClosed())
@@ -78,7 +78,7 @@ public class DownloadHandler
     }
 
 
-    public String read()
+    private String read()
                     throws IOException
     {
         if (socket == null || socket.isClosed())
@@ -94,7 +94,7 @@ public class DownloadHandler
     }
 
 
-    public void download(String fileName, String destination)
+    private void download(String fileName, String destination)
     {
         if (socket == null || socket.isClosed())
         {
@@ -113,6 +113,8 @@ public class DownloadHandler
             }
 
             final Path tempFilePath = Files.createTempFile(newFilePath.getParent(), "." + newFilePath.getFileName(), null);
+            outputStream.write("OK".getBytes());
+
             readDataIntoTempFile(tempFilePath, fileSize);
 
             LOG.info("Copying data into a full file: {}", newFilePath);
@@ -123,8 +125,24 @@ public class DownloadHandler
         }
         catch (Exception e)
         {
+            trySendAnAbortSignal("ERROR: Aborting download");
             LOG.error("Error during file download", e);
-            disconnect();
+        }
+    }
+
+
+    private void trySendAnAbortSignal(String message)
+    {
+        try
+        {
+            if (socket.isConnected())
+            {
+                outputStream.write("ERROR: Abandon download".getBytes());
+            }
+        }
+        catch (Exception e)
+        {
+            LOG.error("Failed to send an abort signal", e);
         }
     }
 
@@ -177,5 +195,19 @@ public class DownloadHandler
         }
 
         return Long.parseLong(parts[1]);
+    }
+
+
+    public void downloadFile(InetSocketAddress address, String filename, String destination)
+    {
+        try
+        {
+            connect(address);
+            download(filename, destination);
+        }
+        finally
+        {
+            disconnect();
+        }
     }
 }

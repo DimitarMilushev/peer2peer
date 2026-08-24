@@ -4,6 +4,7 @@ package main.java.d.milushev.p2p.client;
 import main.java.d.milushev.p2p.client.filetransfer.v1.FileServer;
 import main.java.d.milushev.p2p.client.metadata.MetadataUpdater;
 import main.java.d.milushev.p2p.client.repository.ActiveUsersRepository;
+import main.java.d.milushev.p2p.client.repository.RegisteredFilesRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,16 +28,17 @@ public class Main
     private static void basicStart()
     {
         final AtomicBoolean stopSignal = new AtomicBoolean(false);
-        final ActiveUsersRepository repository = new ActiveUsersRepository();
+        final ActiveUsersRepository usersRepository = new ActiveUsersRepository();
+        final RegisteredFilesRepository filesRepository = new RegisteredFilesRepository();
 
         try (final var executor = Executors.newFixedThreadPool(3);
-             final var console = new ConsoleInputListener(stopSignal, repository);
-             final var fileServer = new FileServer(8021);
+             final var console = new ConsoleInputListener(stopSignal, usersRepository, filesRepository);
+             final var fileServer = new FileServer(filesRepository, 8021);
         )
         {
             executor.submit(console);
             executor.submit(fileServer);
-            executor.submit(new MetadataUpdater(repository));
+            executor.submit(new MetadataUpdater(usersRepository));
 
             LOG.info("Started P2P Client...");
             while (!stopSignal.get())

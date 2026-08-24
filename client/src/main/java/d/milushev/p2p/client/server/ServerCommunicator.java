@@ -160,16 +160,14 @@ public class ServerCommunicator
     }
 
 
-    public void download(String address, String file, String downloadDirectory)
+    public void download(String host, String file, String destination)
     {
+        final DownloadHandler handler = new DownloadHandler();
+
         try
         {
-            final DownloadHandler handler = new DownloadHandler();
-            //TODO: fix slash issue
-            final var parsedAddress = new InetSocketAddress(address.substring(1), 8021);
-
-            handler.connect(parsedAddress);
-            handler.download(file, downloadDirectory);
+            final InetSocketAddress address = new InetSocketAddress(host, 8021);
+            handler.downloadFile(address, file, destination);
         }
         catch (Exception e)
         {
