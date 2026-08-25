@@ -54,7 +54,7 @@ public class FileServer implements Runnable, AutoCloseable
     private void listen(ServerSocket serverSocket)
                     throws IOException, InterruptedException
     {
-        LOG.info("Listening...");
+        LOG.info("Listening on port {}", port);
         final Socket socket = serverSocket.accept();
         final var inputStream = socket.getInputStream();
         final var outputStream = socket.getOutputStream();
@@ -125,22 +125,28 @@ public class FileServer implements Runnable, AutoCloseable
             return;
         }
 
-        final var fileInputStream = new FileInputStream(file);
-        final byte[] buffer = new byte[4096];
-        long totalRead = 0;
-        int bytesRead = fileInputStream.read(buffer);
-        while (bytesRead != -1 && socket.isConnected())
+        try (final var fileInputStream = new FileInputStream(file))
         {
-            outputStream.write(buffer, 0, bytesRead);
-            totalRead += bytesRead;
-            LOG.info("{}% sent", Math.round(((double)totalRead / fileSize) * 100));
 
-            bytesRead = fileInputStream.read(buffer);
+            final byte[] buffer = new byte[4096];
+            long totalRead = 0;
+            int bytesRead = fileInputStream.read(buffer);
+            while (bytesRead != -1 && socket.isConnected())
+            {
+                outputStream.write(buffer, 0, bytesRead);
+                totalRead += bytesRead;
+                LOG.info("{}% sent", Math.round(((double)totalRead / fileSize) * 100));
+
+                bytesRead = fileInputStream.read(buffer);
+            }
         }
-        outputStream.flush();
+        finally
+        {
+            outputStream.flush();
 
-        LOG.info("File {} sent to client", filename);
-        socket.close();
+            LOG.info("File {} sent to client", filename);
+            socket.close();
+        }
     }
 
 

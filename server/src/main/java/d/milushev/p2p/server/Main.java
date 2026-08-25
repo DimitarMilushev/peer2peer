@@ -1,6 +1,7 @@
 package main.java.d.milushev.p2p.server;
 
 
+import main.java.d.milushev.p2p.server.env.EnvProperties;
 import main.java.d.milushev.p2p.server.exceptions.ServerException;
 import main.java.d.milushev.p2p.server.listener.Listener;
 import org.apache.logging.log4j.LogManager;
@@ -22,7 +23,7 @@ public class Main
 
         try (final var executor = Executors.newFixedThreadPool(2);
                         final var console = new ConsoleInputListener(stopSignal);
-                        final var listener = new Listener(8000))
+                        final var listener = new Listener(EnvProperties.SERVER_PORT.getOrDefault()))
         {
             executor.submit(listener);
             executor.submit(console);

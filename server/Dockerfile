@@ -4,6 +4,6 @@ WORKDIR /app
 
 COPY build/libs/server-1.0-SNAPSHOT.jar server.jar
 
-EXPOSE 8000
+EXPOSE 8081
 
 ENTRYPOINT ["java", "-jar", "server.jar"]

@@ -1,4 +1,4 @@
-package d.milushev.p2p.envutil.data;
+package d.milushev.p2p.env_utils.data;
 
 
 public abstract class EnvData<T>

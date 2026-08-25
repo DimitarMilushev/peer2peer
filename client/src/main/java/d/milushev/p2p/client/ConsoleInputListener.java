@@ -1,6 +1,7 @@
 package main.java.d.milushev.p2p.client;
 
 
+import main.java.d.milushev.p2p.client.env.EnvProperties;
 import main.java.d.milushev.p2p.client.repository.ActiveUsersRepository;
 import main.java.d.milushev.p2p.client.repository.RegisteredFilesRepository;
 import main.java.d.milushev.p2p.client.repository.models.User;
@@ -26,12 +27,17 @@ public class ConsoleInputListener implements Runnable, AutoCloseable
     private final ServerCommunicator communicator;
     private final RegisteredFilesRepository filesRepository;
 
+
     public ConsoleInputListener(AtomicBoolean stopSignal, ActiveUsersRepository repository, RegisteredFilesRepository filesRepository)
     {
         this.isStopped = stopSignal;
         this.repository = repository;
         this.filesRepository = filesRepository;
-        this.communicator = new ServerCommunicator("localhost", 8000, repository);
+        this.communicator = new ServerCommunicator(
+                        EnvProperties.SERVER_HOST.getOrDefault(),
+                        EnvProperties.SERVER_PORT.getOrDefault(),
+                        repository
+        );
     }
 
 

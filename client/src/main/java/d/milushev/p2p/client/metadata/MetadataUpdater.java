@@ -1,10 +1,12 @@
 package main.java.d.milushev.p2p.client.metadata;
 
 
+import main.java.d.milushev.p2p.client.env.EnvProperties;
 import main.java.d.milushev.p2p.client.repository.ActiveUsersRepository;
 import main.java.d.milushev.p2p.client.server.ServerCommunicator;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
@@ -17,11 +19,11 @@ import org.apache.logging.log4j.Logger;
  */
 public class MetadataUpdater implements Runnable
 {
-    private static final int DEFAULT_UPDATE_TIMEOUT_S = 5;
     private static final String METADATA_COMMAND = "list-active-users";
 
     private static final Logger LOG = LogManager.getLogger(MetadataUpdater.class);
 
+    private final int refreshTimeout;
     private final ServerCommunicator serverCommunicator;
     private final AtomicBoolean isRunning;
     private final ActiveUsersRepository repository;
@@ -29,9 +31,15 @@ public class MetadataUpdater implements Runnable
 
     public MetadataUpdater(ActiveUsersRepository repository)
     {
-        serverCommunicator = new ServerCommunicator("localhost", 8000, repository);
-        isRunning = new AtomicBoolean(false);
+        this.serverCommunicator = new ServerCommunicator(
+                        EnvProperties.SERVER_HOST.getOrDefault(),
+                        EnvProperties.SERVER_PORT.getOrDefault(),
+                        repository
+        );
+
+        this.isRunning = new AtomicBoolean(false);
         this.repository = repository;
+        this.refreshTimeout = EnvProperties.UPDATER_TIMEOUT_S.getOrDefault();
     }
 
 
@@ -60,7 +68,7 @@ public class MetadataUpdater implements Runnable
     {
         try
         {
-            Thread.sleep(DEFAULT_UPDATE_TIMEOUT_S * 1000L);
+            Thread.sleep(Duration.ofSeconds(refreshTimeout).toMillis());
         }
         catch (InterruptedException e)
         {

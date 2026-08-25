@@ -1,6 +1,7 @@
 package main.java.d.milushev.p2p.client;
 
 
+import main.java.d.milushev.p2p.client.env.EnvProperties;
 import main.java.d.milushev.p2p.client.filetransfer.v1.FileServer;
 import main.java.d.milushev.p2p.client.metadata.MetadataUpdater;
 import main.java.d.milushev.p2p.client.repository.ActiveUsersRepository;
@@ -33,7 +34,7 @@ public class Main
 
         try (final var executor = Executors.newFixedThreadPool(3);
              final var console = new ConsoleInputListener(stopSignal, usersRepository, filesRepository);
-             final var fileServer = new FileServer(filesRepository, 8021);
+             final var fileServer = new FileServer(filesRepository, EnvProperties.FILE_SERVER_PORT.getOrDefault());
         )
         {
             executor.submit(console);

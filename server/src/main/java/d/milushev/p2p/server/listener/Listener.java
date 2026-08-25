@@ -23,6 +23,8 @@ public class Listener implements Runnable, AutoCloseable
 {
     private static final Logger LOG = LogManager.getLogger(Listener.class);
 
+    private static final int SELECTORS_REFRESH_MS = 1000;
+
     private final int port;
 
     private volatile boolean isStopped;
@@ -82,11 +84,11 @@ public class Listener implements Runnable, AutoCloseable
 
             commandProcessorExecutor.execute(new CommandProcessor(messageMediator, this::onConnectionClosed));
 
-            LOG.info("Started..");
+            LOG.info("Listening on port {}", port);
 
             while (!isStopped)
             {
-                final int readyChannels = selector.select(1000);
+                final int readyChannels = selector.select(SELECTORS_REFRESH_MS);
                 if (this.isStopped || readyChannels == 0)
                 {
                     continue;
@@ -101,7 +103,7 @@ public class Listener implements Runnable, AutoCloseable
         }
         finally
         {
-            LOG.info("Stopping Listener...");
+            LOG.info("Stopping listener on port {}", port);
             stop();
         }
     }

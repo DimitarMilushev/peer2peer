@@ -47,6 +47,8 @@ public class ServerCommunicator
 
     private void openConnection()
     {
+        LOG.info("Connecting to {}", targetAddress);
+
         try (Selector selector = Selector.open();
              SocketChannel clientChannel = SocketChannel.open())
         {
@@ -55,7 +57,7 @@ public class ServerCommunicator
             clientChannel.register(selector, clientChannel.validOps());
 
             running.set(true);
-            LOG.info("Client started. Type messages to send:");
+            LOG.info("Connection successful");
 
             listenOnChannel(selector);
         }
@@ -68,12 +70,11 @@ public class ServerCommunicator
             LOG.error("Error in server communicator", e);
         }
         finally
-
         {
             running.set(false);
             executor.shutdown();
+            LOG.info("Connection closed");
         }
-
     }
 
 
@@ -130,6 +131,7 @@ public class ServerCommunicator
             LOG.error("Error when sending message: {}", message, e);
         }
     }
+
 
     public String sendSync(String message)
     {
