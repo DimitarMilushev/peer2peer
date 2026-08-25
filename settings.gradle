@@ -1,5 +1,7 @@
 rootProject.name = 'p2p'
 
+include 'env-utils'
 include ':network-utils'
 include ':server'
 include ':client'
+
