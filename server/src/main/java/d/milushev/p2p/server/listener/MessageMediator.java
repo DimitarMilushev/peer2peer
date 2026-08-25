@@ -40,18 +40,16 @@ public class MessageMediator
 
 
     public void request(Request request)
-                    throws IOException
     {
-        LOG.info("Enqueuing request [{}] from channel [{}]", request.payload(), request.channel().getRemoteAddress());
+        LOG.info("Enqueuing request [{}]", request.payload());
         this.requests.add(request);
     }
 
 
-    public Request poll()
-                    throws InterruptedException, IOException
+    public Request poll() throws InterruptedException
     {
         final var request = requests.take();
-        LOG.info("Polled request [{}] from channel [{}]", request.payload(), request.channel().getRemoteAddress());
+        LOG.info("Polled request [{}]", request.payload());
         return request;
     }
 

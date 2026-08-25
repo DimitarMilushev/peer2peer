@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,6 +33,7 @@ public class Listener implements Runnable, AutoCloseable
     private final ActiveConnections connections;
     private final MessageMediator messageMediator;
     private final ExecutorService commandProcessorExecutor;
+    private final ConnectionHandler handler;
 
 
     public Listener(int port)
@@ -53,19 +55,7 @@ public class Listener implements Runnable, AutoCloseable
         connections = new ActiveConnections();
         messageMediator = new MessageMediator();
         commandProcessorExecutor = Executors.newSingleThreadExecutor();
-    }
-
-
-    private void closeUser(Socket socket)
-    {
-        try
-        {
-            connections.remove(socket);
-        }
-        catch (ConnectionNotFoundException e)
-        {
-            LOG.error("Failed to close user connection: connection not found", e);
-        }
+        handler = new ConnectionHandler(connections, messageMediator);
     }
 
 
@@ -90,57 +80,70 @@ public class Listener implements Runnable, AutoCloseable
             serverChannel.configureBlocking(false);
             serverChannel.register(selector, SelectionKey.OP_ACCEPT);
 
-            commandProcessorExecutor.execute(new CommandProcessor(messageMediator, (socket) ->
-            {
-                try
-                {
-                    connections.remove(socket);
-                }
-                catch (ConnectionNotFoundException e)
-                {
-                    LOG.error("Failed to close user connection: connection not found", e);
-                }
-            }));
-            final ConnectionHandler handler = new ConnectionHandler(connections, messageMediator);
+            commandProcessorExecutor.execute(new CommandProcessor(messageMediator, this::onConnectionClosed));
 
             LOG.info("Started..");
 
             while (!isStopped)
             {
                 final int readyChannels = selector.select(1000);
-
                 if (this.isStopped || readyChannels == 0)
                 {
                     continue;
                 }
 
-                for (var key : selector.selectedKeys())
-                {
-                    if (!key.isValid())
-                    {
-                        continue;
-                    }
-
-                    if (key.isAcceptable())
-                    {
-                        handler.handleAccept(key);
-                    }
-                    else if (key.isReadable())
-                    {
-                        handler.handleRead(key);
-                    }
-                    else if (key.isWritable())
-                    {
-                        handler.handleWrite(key);
-                    }
-                }
-
-                selector.selectedKeys().clear();
+                processSelectedKeys(selector.selectedKeys());
             }
         }
         catch (IOException e)
         {
             LOG.error("Failed during listener startup: {}", e.getMessage(), e);
+        }
+        finally
+        {
+            LOG.info("Stopping Listener...");
+            stop();
+        }
+    }
+
+
+    private void onConnectionClosed(Socket socket)
+    {
+        try
+        {
+            connections.remove(socket);
+        }
+        catch (ConnectionNotFoundException e)
+        {
+            LOG.warn("Failed to close user connection: connection not found", e);
+        }
+    }
+
+
+    private void processSelectedKeys(Set<SelectionKey> selectionKeys)
+    {
+        try
+        {
+            for (var key : selector.selectedKeys())
+            {
+                if (!key.isValid())
+                {
+                    continue;
+                }
+
+                if (key.isAcceptable())
+                {
+                    handler.handleAccept(key);
+                }
+                else if (key.isReadable())
+                {
+                    handler.handleRead(key);
+                }
+                else if (key.isWritable())
+                {
+                    handler.handleWrite(key);
+                }
+            }
         }
         catch (ServerException e)
         {
@@ -148,8 +151,7 @@ public class Listener implements Runnable, AutoCloseable
         }
         finally
         {
-            LOG.info("Stopping Listener...");
-            stop();
+            selectionKeys.clear();
         }
     }
 

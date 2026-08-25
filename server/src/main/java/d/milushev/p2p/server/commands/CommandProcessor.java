@@ -56,9 +56,10 @@ public class CommandProcessor implements Runnable, Closeable
             {
                 request = messageMediator.poll();
             }
-            catch (InterruptedException | IOException e)
+            catch (InterruptedException e)
             {
                 LOG.error("Error while polling for messages: ", e);
+                Thread.currentThread().interrupt();
                 continue;
             }
 
@@ -89,7 +90,7 @@ public class CommandProcessor implements Runnable, Closeable
     private void process(Request request)
                     throws Exception
     {
-        LOG.debug("Processing request [{}] from channel [{}]", request.payload(), request.channel().getRemoteAddress());
+        LOG.debug("Processing request [{}]", request.payload());
 
         final String input = request.payload().toString();
         if (input.isBlank())
@@ -112,6 +113,9 @@ public class CommandProcessor implements Runnable, Closeable
                 break;
             case UnregisterCommand.NAME:
                 executor.execute(new UnregisterCommand(input, request.channel().socket(), repository, messageMediator::respond));
+                break;
+            case ListActiveUsersCommand.NAME:
+                executor.execute(new ListActiveUsersCommand(request.channel().socket(), repository, messageMediator::respond));
                 break;
             default:
                 throw new UnsupportedInputException(input);

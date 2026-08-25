@@ -94,7 +94,7 @@ public class ConnectionHandler
             catch (Exception e)
             {
                 LOG.error("Connection issue. Closing channel [{}]", socket.getRemoteSocketAddress(), e);
-                closeClientChannel(socket);
+                tryCloseClientChannel(socket);
 
                 throw new ServerException("Failed to process READ operation", e);
             }
@@ -106,19 +106,23 @@ public class ConnectionHandler
     }
 
 
-    private void closeClientChannel(Socket socket)
-                    throws ServerException
+    private void tryCloseClientChannel(Socket socket)
     {
-        LOG.info("Closing client channel [{}]", socket.getRemoteSocketAddress());
+        if (socket.isClosed())
+        {
+            return;
+        }
 
+        LOG.info("Closing client channel [{}]", socket.getRemoteSocketAddress());
+        final Request closeRequest = new Request(CloseUserCommand.NAME, socket.getChannel());
         try
         {
-            final Request closeRequest = new Request(CloseUserCommand.NAME, socket.getChannel());
+            socket.close();
             messageMediator.request(closeRequest);
         }
         catch (Exception e)
         {
-            throw new ServerException("Failed to close channel", e);
+            LOG.error("Failed to close channel [{}]", socket.getRemoteSocketAddress(), e);
         }
     }
 
