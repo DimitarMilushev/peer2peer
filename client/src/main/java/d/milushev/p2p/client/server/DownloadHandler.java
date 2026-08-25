@@ -125,7 +125,7 @@ public class DownloadHandler
         }
         catch (Exception e)
         {
-            trySendAnAbortSignal("ERROR: Aborting download");
+            trySendAnAbortSignal("Aborting download");
             LOG.error("Error during file download", e);
         }
     }
@@ -137,7 +137,7 @@ public class DownloadHandler
         {
             if (socket.isConnected())
             {
-                outputStream.write("ERROR: Abandon download".getBytes());
+                outputStream.write(("ERROR: " + message).getBytes());
             }
         }
         catch (Exception e)
