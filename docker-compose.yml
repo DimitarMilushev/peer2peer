@@ -1,10 +1,10 @@
 services:
   central-server:
+    hostname: p2p-server
     build:
       context: server
       dockerfile: Dockerfile
     container_name: p2p-server
-    hostname: p2p-server
     ports:
       - "8081:8081"
     environment:
@@ -13,7 +13,7 @@ services:
       - p2p-network
 
   client-1:
-    hostname: "client-1"
+    hostname: client-1
     stdin_open: true
     build:
       context: client
@@ -31,7 +31,7 @@ services:
       - p2p-network
 
   client-2:
-    hostname: "client-1"
+    hostname: client-1
     stdin_open: true
     build:
       context: client

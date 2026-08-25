@@ -99,6 +99,7 @@ public class MetadataUpdater implements Runnable
             final var users = MetadataParser.parseUsers(response);
             LOG.info("Parsed users {}", users);
 
+            repository.drop();
             if (users.isEmpty())
             {
                 return;

@@ -36,6 +36,7 @@ public class ActiveUsersRepository
         }
     }
 
+
     public User getByUsername(String username)
     {
         for (Map.Entry<String, Set<String>> entry : usernamesByAddress.entrySet())
@@ -47,5 +48,11 @@ public class ActiveUsersRepository
         }
 
         return null;
+    }
+
+
+    public void drop()
+    {
+        usernamesByAddress.clear();
     }
 }
