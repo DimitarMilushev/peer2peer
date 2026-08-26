@@ -18,5 +18,5 @@ public class EnvProperties
 
     public static final EnvInteger FILE_SERVER_PORT = new EnvInteger(EnvConstants.FILE_SERVER_PORT, 8021);
 
-    public static final EnvInteger UPDATER_TIMEOUT_S = new EnvInteger(EnvConstants.UPDATER_TIMEOUT_S, 10);
+    public static final EnvInteger UPDATER_TIMEOUT_S = new EnvInteger(EnvConstants.UPDATER_TIMEOUT_S, 30);
 }

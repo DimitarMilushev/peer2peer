@@ -1,6 +1,9 @@
 package main.java.d.milushev.p2p.client;
 
 
+import main.java.d.milushev.p2p.client.db.BasicDB;
+import main.java.d.milushev.p2p.client.db.exceptions.TableCreationException;
+import main.java.d.milushev.p2p.client.db.exceptions.TableModifyException;
 import main.java.d.milushev.p2p.client.env.EnvProperties;
 import main.java.d.milushev.p2p.client.filetransfer.v1.FileServer;
 import main.java.d.milushev.p2p.client.metadata.MetadataUpdater;
@@ -9,6 +12,8 @@ import main.java.d.milushev.p2p.client.repository.RegisteredFilesRepository;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -21,10 +26,25 @@ public class Main
     public static void main(String[] args)
     {
         LOG.info("Starting P2P Client...");
-        basicStart();
+        BasicDB db = new BasicDB("C:\\Users\\d.milushev\\repos\\personal\\peer2peer\\client\\src");
+        try
+        {
+            db.createTable("test", Set.of("name", "age"));
+            db.addRecords("test", Gosho.class, Set.of(new Gosho("test-name", 20)));
+        }
+        catch (TableCreationException e)
+        {
+            throw new RuntimeException(e);
+        }
+        catch (TableModifyException e)
+        {
+            throw new RuntimeException(e);
+        }
+        //        basicStart();
         LOG.info("P2P Client has been stopped.");
     }
 
+    public static record Gosho(String name, int age) {}
 
     private static void basicStart()
     {
